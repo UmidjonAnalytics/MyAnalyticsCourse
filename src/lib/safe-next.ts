@@ -1,0 +1,5 @@
+// Only allow redirects to paths on our own site ("/profil"), never to other domains.
+export function safeNext(next: string | null | undefined, fallback = "/"): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
+  return next;
+}

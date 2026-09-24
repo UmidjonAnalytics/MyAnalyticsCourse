@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Self-contained server build: used by the Dockerfile (VPS). Netlify ignores it safely.
+  output: "standalone",
   turbopack: { root: import.meta.dirname },
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "t.me" },
-      { protocol: "https", hostname: "*.supabase.co" },
-    ],
-  },
+  poweredByHeader: false,
   headers: async () => [
     {
       source: "/(.*)",
@@ -15,6 +12,7 @@ const nextConfig: NextConfig = {
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
       ],
     },
   ],
