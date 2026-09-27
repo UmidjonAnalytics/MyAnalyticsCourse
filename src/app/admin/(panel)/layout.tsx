@@ -2,6 +2,7 @@ import { Avatar } from "@/components/Avatar";
 import { Logo } from "@/components/Logo";
 import { LogoutButton } from "@/components/LogoutButton";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { visibleEmail } from "@/lib/auth/constants";
 import { requireAdmin } from "@/lib/auth/session";
 import { uz } from "@/lib/i18n/uz";
 
@@ -14,7 +15,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
         <div className="flex h-16 items-center justify-between gap-4 px-4">
           <Logo suffix={uz.brand.adminName} />
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm font-semibold sm:inline">{profile.full_name || profile.email || profile.phone}</span>
+            <span className="hidden text-sm font-semibold sm:inline">{profile.full_name || visibleEmail(profile.email) || profile.phone}</span>
             <Avatar name={profile.full_name || "A"} url={profile.avatar_url} />
           </div>
         </div>

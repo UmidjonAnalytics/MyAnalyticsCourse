@@ -75,6 +75,8 @@ export const uz = {
     redirecting: "Yo'naltirilmoqda...",
     linkHint:
       "Avval telefon bilan ro'yxatdan o'tgan bo'lsangiz, telefon bilan kiring. Google hisobini keyin profilda bog'lashingiz mumkin, shunda ikki xil hisob paydo bo'lmaydi.",
+    devMode: (code: string) =>
+      `Test rejimi: istalgan telefon raqamini kiriting, SMS yuborilmaydi. Kod: ${code}`,
     terms: "Kirish orqali siz foydalanish shartlariga rozilik bildirasiz.",
     reasons: {
       device:

@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { DeviceList, type DeviceItem } from "@/components/profile/DeviceList";
 import { LinkedMethods } from "@/components/profile/LinkedMethods";
 import { NameForm } from "@/components/profile/NameForm";
-import type { OAuthProvider } from "@/lib/auth/constants";
+import { visibleEmail, type OAuthProvider } from "@/lib/auth/constants";
 import { currentDeviceId } from "@/lib/auth/device";
 import { authErrorMessage } from "@/lib/auth/errors";
 import { requireUser } from "@/lib/auth/session";
@@ -49,6 +49,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     );
   }
 
+  const email = visibleEmail(profile.email);
   const linkedProviders = (authUser.user?.identities ?? []).map((i) => i.provider);
   const flags = loginFlags();
   const enabledProviders: OAuthProvider[] = ["google"];
@@ -71,7 +72,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         <Avatar name={profile.full_name || "?"} url={profile.avatar_url} size={64} />
         <div>
           <h1 className="text-2xl font-bold">{profile.full_name || uz.profile.title}</h1>
-          <p className="text-sm text-muted">{profile.email ?? (profile.phone ? formatUzPhone(profile.phone) : "")}</p>
+          <p className="text-sm text-muted">{email ?? (profile.phone ? formatUzPhone(profile.phone) : "")}</p>
         </div>
       </div>
 
@@ -98,7 +99,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
             </div>
             <div>
               <dt className="text-sm font-semibold">{uz.profile.email}</dt>
-              <dd className="mt-1 break-all">{profile.email ?? <span className="text-muted">{uz.profile.emailMissing}</span>}</dd>
+              <dd className="mt-1 break-all">{email ?? <span className="text-muted">{uz.profile.emailMissing}</span>}</dd>
             </div>
           </dl>
           {!profile.phone_verified ? <Notice>{uz.profile.phoneRequiredNote}</Notice> : null}

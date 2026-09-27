@@ -5,6 +5,7 @@ import { Notice } from "@/components/Notice";
 import { OAuthButtons } from "@/components/OAuthButtons";
 import { PhoneOtpForm } from "@/components/PhoneOtpForm";
 import type { OAuthProvider } from "@/lib/auth/constants";
+import { devLoginCode } from "@/lib/auth/dev-login";
 import { authErrorMessage } from "@/lib/auth/errors";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isSupabaseConfigured, loginFlags } from "@/lib/env";
@@ -54,6 +55,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         <p className="mt-2 text-sm text-muted">{uz.auth.lead}</p>
 
         <div className="mt-6 space-y-3">
+          {devLoginCode() ? <Notice>{uz.auth.devMode(devLoginCode() ?? "")}</Notice> : null}
           {reason ? <Notice tone={sp.sabab?.startsWith("device") ? "error" : "info"}>{reason}</Notice> : null}
           {sp.xato ? <Notice tone="error">{authErrorMessage(sp.xato)}</Notice> : null}
         </div>

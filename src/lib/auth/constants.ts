@@ -12,4 +12,11 @@ export const PROTECTED_PREFIXES = ["/profil", "/mening-kurslarim", "/dars", "/to
 // Paths on the admin host that are NOT rewritten into /admin (shared with the student site).
 export const ADMIN_HOST_SHARED_PREFIXES = ["/api/", "/auth/", "/kirish"];
 
+// Test-mode accounts (DEV_LOGIN_CODE) get a placeholder email on this domain; it is never shown.
+export const DEV_EMAIL_DOMAIN = "dev.invalid";
+
+export function visibleEmail(email: string | null | undefined): string | null {
+  return email && !email.endsWith(`@${DEV_EMAIL_DOMAIN}`) ? email : null;
+}
+
 export type OAuthProvider = "google" | "apple" | "facebook";

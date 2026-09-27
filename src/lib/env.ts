@@ -20,6 +20,7 @@ const schema = z.object({
   ENABLE_APPLE_LOGIN: flag,
   ENABLE_FACEBOOK_LOGIN: flag,
   ADMIN_HOSTNAMES: z.string().optional(),
+  DEV_LOGIN_CODE: z.string().regex(/^\d{6}$/).optional().or(z.literal("")),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

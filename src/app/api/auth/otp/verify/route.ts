@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiError, apiOk } from "@/lib/api/response";
+import { devLinkPhone, devLoginCode, devSignIn } from "@/lib/auth/dev-login";
 import { registerCurrentDevice } from "@/lib/auth/device";
 import { normalizeUzPhone } from "@/lib/phone";
 import { rateLimitAll } from "@/lib/rate-limit";
@@ -31,17 +32,27 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createClient();
 
+  let userId: string | undefined;
   if (parsed.data.purpose === "link") {
     const { data } = await supabase.auth.getClaims();
-    if (!data?.claims) return apiError(401, "not_logged_in");
+    userId = data?.claims?.sub;
+    if (!userId) return apiError(401, "not_logged_in");
   }
 
-  const { error } = await supabase.auth.verifyOtp({
-    phone: `+${phone}`,
-    token: parsed.data.code,
-    type: parsed.data.purpose === "link" ? "phone_change" : "sms",
-  });
-  if (error) return apiError(error.status ?? 400, error.code ?? "otp_expired");
+  const devCode = devLoginCode();
+  if (devCode) {
+    // Test mode: the fixed code works for any number.
+    if (parsed.data.code !== devCode) return apiError(400, "otp_expired");
+    const result = userId ? await devLinkPhone(userId, phone) : await devSignIn(supabase, phone);
+    if (!result.ok) return apiError(400, result.code);
+  } else {
+    const { error } = await supabase.auth.verifyOtp({
+      phone: `+${phone}`,
+      token: parsed.data.code,
+      type: parsed.data.purpose === "link" ? "phone_change" : "sms",
+    });
+    if (error) return apiError(error.status ?? 400, error.code ?? "otp_expired");
+  }
 
   // Record this device (and push out the oldest one above the limit).
   const device = await registerCurrentDevice(supabase);

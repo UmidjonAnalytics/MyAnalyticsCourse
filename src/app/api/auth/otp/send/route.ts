@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiError, apiOk } from "@/lib/api/response";
+import { devLoginCode } from "@/lib/auth/dev-login";
 import { normalizeUzPhone, maskUzPhone } from "@/lib/phone";
 import { rateLimit, rateLimitAll } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return apiError(400, "validation_failed");
   const phone = normalizeUzPhone(parsed.data.phone);
   if (!phone) return apiError(400, "invalid_phone");
+
+  // Test mode: nothing is sent; the fixed code is accepted by /api/auth/otp/verify.
+  if (devLoginCode()) return apiOk({ maskedPhone: maskUzPhone(phone) });
 
   const ip = clientIp(request.headers);
   if (!(await rateLimit(`otp-send-gap:${phone}`, 1, 55))) return apiError(429, "over_sms_send_rate_limit");

@@ -77,11 +77,15 @@ Check it worked: **Table Editor** → you should see `courses` with 3 rows.
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxx.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_...` |
    | `SUPABASE_SECRET_KEY` | `sb_secret_...` |
-   | `SMS_PROVIDER` | `console` for now, `eskiz` once Eskiz is set up (step 4) |
-   | `SEND_SMS_HOOK_SECRET` | from step 3c (add it after you create the hook) |
+   | `DEV_LOGIN_CODE` | `123456` (test mode, see below) |
 
 5. Click **Deploy**. After 2–4 minutes you get a URL like `https://something.netlify.app`.
    You can rename it: **Project configuration → General → Change project name**.
+
+**Test mode (while we build):** with `DEV_LOGIN_CODE=123456`, any phone number logs in with code
+`123456`. No SMS is sent, and steps 3b, 3c and 4 are not needed yet. The login page shows a
+"Test rejimi" note. **Before launch:** delete `DEV_LOGIN_CODE`, do steps 3b, 3c and 4, and delete the test
+accounts (Supabase **Authentication → Users**).
 
 Whenever you change an environment variable: **Deploys → Trigger deploy → Deploy project** so it takes effect.
 
@@ -103,6 +107,9 @@ Whenever you change an environment variable: **Deploys → Trigger deploy → De
   https://www.<your-domain>/**
   https://admin.<your-domain>/**
   ```
+
+> While `DEV_LOGIN_CODE` is set you only need **3a** (and **3e** if you want to try Google now).
+> Sections 3b, 3c and 4 are for launch, when real SMS codes are turned on.
 
 ### 3b. Phone login
 
@@ -232,7 +239,7 @@ all others show the student site (`/admin` there is a 404).
    ```
 3. Open <http://localhost:3000> (students) and <http://admin.localhost:3000> (admin).
 
-Supabase can't call the SMS hook on your computer, so locally use a **test phone number** (3b).
+Locally use test mode (`DEV_LOGIN_CODE=123456` in `.env.local`).
 
 Other commands: `npm run build` (checks everything compiles), `npm run lint`, `npm run typecheck`.
 
@@ -245,8 +252,9 @@ Other commands: `npm run build` (checks everything compiles), `npm run lint`, `n
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Publishable (anon) key, safe in the browser |
 | `SUPABASE_SECRET_KEY` | yes | Secret (service role) key, server only |
-| `SEND_SMS_HOOK_SECRET` | yes | From Supabase Send SMS hook (`v1,whsec_...`) |
-| `SMS_PROVIDER` | yes | `eskiz` or `console` (testing) |
+| `DEV_LOGIN_CODE` | test only | Fixed login code for any phone; no SMS. Remove before launch |
+| `SEND_SMS_HOOK_SECRET` | at launch | From Supabase Send SMS hook (`v1,whsec_...`) |
+| `SMS_PROVIDER` | at launch | `eskiz` or `console` (testing) |
 | `ESKIZ_EMAIL`, `ESKIZ_PASSWORD` | with Eskiz | Eskiz login |
 | `ESKIZ_FROM` | no | Sender, default `4546` |
 | `ENABLE_APPLE_LOGIN` | no | `true` shows the Apple button |
