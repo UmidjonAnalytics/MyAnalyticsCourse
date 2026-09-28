@@ -110,7 +110,7 @@ export async function listCatalog(supabase: Supabase, userId: string | null) {
 
 export type LessonState = "completed" | "current" | "open" | "locked";
 
-export type OutlineLesson = Pick<Lesson, "id" | "title" | "slug" | "position" | "is_free_preview"> & {
+export type OutlineLesson = Pick<Lesson, "id" | "title" | "slug" | "position" | "is_free_preview" | "duration_minutes"> & {
   status: ProgressStatus | null;
   state: LessonState;
   number: number; // 1-based across the whole course
@@ -152,7 +152,7 @@ async function loadOutline(slug: string, userId: string | null): Promise<CourseO
       .order("position"),
     supabase
       .from("lessons")
-      .select("id, module_id, title, slug, position, is_free_preview")
+      .select("id, module_id, title, slug, position, is_free_preview, duration_minutes")
       .eq("course_id", course.id)
       .eq("is_published", true)
       .is("archived_at", null)
@@ -189,6 +189,7 @@ async function loadOutline(slug: string, userId: string | null): Promise<CourseO
           slug: l.slug,
           position: l.position,
           is_free_preview: l.is_free_preview,
+          duration_minutes: l.duration_minutes,
           status,
           state,
           number,

@@ -45,12 +45,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 4. `supabase/migrations/0004_admin_content.sql` (covers storage, admin helpers)
 5. `supabase/migrations/0005_practice.sql` (datasets, SQL exercises, private datasets bucket)
 6. `supabase/migrations/0006_payments.sql` (payments, promo usage, revenue stats)
-7. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+7. `supabase/migrations/0007_discussions_assignments.sql` (lesson length, discussions, Excel assignments)
+8. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0006 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0007 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -268,6 +269,7 @@ Other commands: `npm run build` (checks everything compiles), `npm run lint`, `n
 | `ENABLE_APPLE_LOGIN` | no | `true` shows the Apple button |
 | `ENABLE_FACEBOOK_LOGIN` | no | `true` shows the Facebook button |
 | `ADMIN_HOSTNAMES` | no | Extra admin hostnames, comma-separated |
+| `PUBLIC_SITE_URL` | no | Student site address, for "Darsni ochish" links in the admin panel (not needed on `admin.<domain>`) |
 | `ENABLE_TEST_PAYMENTS` | test only | `true` shows "Sinov to'lovi" at checkout. Remove before launch |
 | `PAYME_MERCHANT_ID`, `PAYME_KEY` | for Payme | Cashbox ID and key (test key in sandbox) |
 | `PAYME_TEST` | for Payme | `true` = sandbox (test.paycom.uz) |
@@ -337,6 +339,25 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - Upgrading `@duckdb/duckdb-wasm`: update `version` in `src/lib/practice/duckdb-extensions.json`
   (the browser console warns if it does not match).
 
+## Excel assignments and discussions
+
+- **Excel topshiriq** (admin → lesson page → "Excel topshiriq qo'shish"): the student sees the workbook
+  right in the lesson ("Amaliyot" tab) and types answers into input boxes under it.
+  - Workbook: paste an OneDrive / Excel Online **embed code** (OneDrive → File → Share → Embed; tick
+    "Let people type in cells" so students can work in it; their changes are not saved to your file),
+    or a Google Sheets "Publish to web" link, **or** upload an `.xlsx` (up to 20 MB). Uploaded files
+    live in the private `assignment-files` bucket and are shown through Microsoft's free Office viewer
+    with a 3-hour signed link (read-only; tick "yuklab olishi mumkin" so students can download it).
+  - Questions: number or text answers. Several correct answers = one per line. Numbers accept
+    `1 250 000`, `1,250,000`, `12,5`, `so'm`; "Ruxsat etilgan farq" allows rounding. The correct
+    answers stay on the server; the student sees right/wrong per question and your hint.
+  - Every attempt is saved (`assignment_submissions`).
+- **Muhokama** tab under each lesson: students who can open the lesson post questions, reply (one
+  level), and delete their own. Admin replies show an "O'qituvchi" badge. Admin → "Muhokamalar" lists
+  the latest 100 comments for moderation.
+- Top bar on every lesson: breadcrumb, "Oldingi · 3 / 28 · Keyingi" (a lock if the next lesson
+  needs a purchase). Lesson length ("Davomiyligi") is set in the lesson editor and shown in the path.
+
 ## Payments (Payme, Click, Paynet)
 
 How it works:
@@ -387,7 +408,7 @@ Every callback is stored in `payment_events` and shown on the admin order page.
 Shown as "Tez orada" at checkout. Send Claude the Paynet merchant documentation; the protocol is not
 guessed.
 
-## Phases## Phases
+## Phases
 
 - Phase 1, Foundation (done): setup, database, phone + Google login, linking, device limit, admin subdomain, Docker.
 - Phase 2, Student experience + admin content (done): catalog with filters, course/bundle pages (upgrade
@@ -401,3 +422,5 @@ guessed.
 - Phase 3, Payments (done, waiting for merchant credentials): orders, promo codes, checkout, Payme
   (hosted + on-site card form) and Click webhooks, Paynet slot, test mode, receipts, admin orders/refunds,
   promo codes, revenue dashboard.
+- Lesson page upgrade (done): top Prev/Next bar, Tavsif / Amaliyot / Muhokama tabs, discussions,
+  Excel assignments with answer boxes, lesson length.

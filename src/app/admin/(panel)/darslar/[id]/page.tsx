@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { AddAssignmentButton } from "@/components/admin/AddAssignmentButton";
 import { AddExerciseButton } from "@/components/admin/AddExerciseButton";
 import { LessonForm } from "@/components/admin/LessonForm";
 import { uz } from "@/lib/i18n/uz";
@@ -15,11 +16,12 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
   const { data: lesson } = await supabase.from("lessons").select("*").eq("id", id).maybeSingle();
   if (!lesson) notFound();
 
-  const [{ data: content }, { data: modules }, { data: course }, { data: exercises }] = await Promise.all([
+  const [{ data: content }, { data: modules }, { data: course }, { data: exercises }, { data: assignments }] = await Promise.all([
     supabase.from("lesson_contents").select("*").eq("lesson_id", id).maybeSingle(),
     supabase.from("modules").select("id, title").eq("course_id", lesson.course_id).is("archived_at", null).order("position"),
     supabase.from("courses").select("title").eq("id", lesson.course_id).single(),
     supabase.from("exercises").select("id, title, is_published").eq("lesson_id", id).is("archived_at", null).order("position"),
+    supabase.from("assignments").select("id, title, is_published").eq("lesson_id", id).is("archived_at", null).order("position"),
   ]);
 
   return (
@@ -57,6 +59,31 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
           </ul>
         ) : (
           <p className="mt-2 text-sm text-muted">{uz.admin.exercises.empty}</p>
+        )}
+      </section>
+
+      <section className="card mt-6 p-5 sm:p-6" aria-labelledby="lesson-assignments">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="lesson-assignments" className="text-lg font-bold">
+            {uz.admin.assignments.inLesson}
+          </h2>
+          <AddAssignmentButton lessonId={lesson.id} />
+        </div>
+        {assignments?.length ? (
+          <ul className="mt-3 divide-y divide-border">
+            {assignments.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-3 py-2">
+                <Link href={`/topshiriqlar/${a.id}`} className="font-semibold hover:underline">
+                  {a.title}
+                </Link>
+                <span className={`text-xs font-semibold ${a.is_published ? "text-accent-text" : "text-muted"}`}>
+                  {a.is_published ? uz.admin.common.published : uz.admin.common.draft}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-muted">{uz.admin.assignments.empty}</p>
         )}
       </section>
     </div>

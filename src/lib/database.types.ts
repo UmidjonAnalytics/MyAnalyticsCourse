@@ -99,6 +99,7 @@ export type Lesson = {
   position: number;
   is_free_preview: boolean;
   is_published: boolean;
+  duration_minutes: number | null;
   created_at: Timestamp;
   updated_at: Timestamp;
   archived_at: Timestamp | null;
@@ -288,6 +289,57 @@ export type ExerciseSubmission = {
   created_at: Timestamp;
 };
 
+export type LessonComment = {
+  id: string;
+  lesson_id: string;
+  user_id: string;
+  parent_id: string | null;
+  body: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  deleted_at: Timestamp | null;
+};
+
+export type Assignment = {
+  id: string;
+  lesson_id: string;
+  title: string;
+  instructions_md: string;
+  embed_url: string | null;
+  file_path: string | null;
+  allow_download: boolean;
+  points: number;
+  position: number;
+  is_published: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type AssignmentQuestion = {
+  id: string;
+  assignment_id: string;
+  position: number;
+  prompt: string;
+  answer_type: "number" | "text";
+  placeholder: string;
+  hint: string;
+};
+
+export type AssignmentAnswerKey = { question_id: string; answers: string[]; tolerance: number; case_sensitive: boolean };
+
+export type AssignmentSubmission = {
+  id: string;
+  user_id: string;
+  assignment_id: string;
+  answers: Json;
+  results: Json;
+  correct: number;
+  total: number;
+  passed: boolean;
+  created_at: Timestamp;
+};
+
 export type ProductRow = {
   product_type: ProductType;
   product_id: string;
@@ -360,6 +412,35 @@ export type Database = {
       >;
       audit_log: Table<AuditLog, "action" | "entity", [Rel<"audit_log_actor_id_fkey", "actor_id", "profiles">]>;
       rate_limits: Table<RateLimit, "key">;
+      lesson_comments: Table<
+        LessonComment,
+        "lesson_id" | "user_id" | "body",
+        [Rel<"lesson_comments_lesson_id_fkey", "lesson_id", "lessons">, Rel<"lesson_comments_user_id_fkey", "user_id", "profiles">]
+      >;
+      assignments: Table<Assignment, "lesson_id" | "title", [Rel<"assignments_lesson_id_fkey", "lesson_id", "lessons">]>;
+      assignment_questions: Table<
+        AssignmentQuestion,
+        "assignment_id" | "prompt",
+        [Rel<"assignment_questions_assignment_id_fkey", "assignment_id", "assignments">]
+      >;
+      assignment_answer_keys: Table<
+        AssignmentAnswerKey,
+        "question_id",
+        [
+          {
+            foreignKeyName: "assignment_answer_keys_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: true;
+            referencedRelation: "assignment_questions";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      assignment_submissions: Table<
+        AssignmentSubmission,
+        "user_id" | "assignment_id" | "answers" | "results" | "correct" | "total" | "passed",
+        [Rel<"assignment_submissions_assignment_id_fkey", "assignment_id", "assignments">]
+      >;
       datasets: Table<Dataset, "name" | "table_name" | "storage_path">;
       exercises: Table<Exercise, "lesson_id" | "title", [Rel<"exercises_lesson_id_fkey", "lesson_id", "lessons">]>;
       exercise_datasets: Table<
@@ -416,6 +497,21 @@ export type Database = {
       test_payment: { Args: { p_order_id: string; p_success: boolean }; Returns: undefined };
       admin_refund_order: { Args: { p_order_id: string; p_note: string }; Returns: undefined };
       admin_dashboard_stats: { Args: Record<string, never>; Returns: Json };
+      lesson_comments_list: {
+        Args: { p_lesson_id: string };
+        Returns: Array<{
+          id: string;
+          parent_id: string | null;
+          body: string;
+          created_at: Timestamp;
+          deleted: boolean;
+          user_id: string;
+          author_name: string;
+          author_avatar: string | null;
+          author_is_admin: boolean;
+        }>;
+      };
+      can_view_assignment: { Args: { p_assignment_id: string }; Returns: boolean };
       can_view_exercise: { Args: { p_exercise_id: string }; Returns: boolean };
       can_access_dataset: { Args: { p_dataset_id: string }; Returns: boolean };
       admin_reorder: { Args: { p_table: "categories" | "courses" | "modules" | "lessons" | "bundles"; p_ids: string[] }; Returns: undefined };

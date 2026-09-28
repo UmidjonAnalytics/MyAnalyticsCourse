@@ -29,7 +29,15 @@ export default async function LearnLayout({
     modules: outline.modules.map((m) => ({
       id: m.id,
       title: m.title,
-      lessons: m.lessons.map((l) => ({ id: l.id, slug: l.slug, title: l.title, state: l.state, number: l.number })),
+      lessons: m.lessons.map((l) => ({
+        id: l.id,
+        slug: l.slug,
+        title: l.title,
+        state: l.state,
+        number: l.number,
+        minutes: l.duration_minutes,
+        free: l.is_free_preview && !outline.hasAccess,
+      })),
     })),
   };
 

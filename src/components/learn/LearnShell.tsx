@@ -3,13 +3,22 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { CheckCircle2, Circle, Lock, Menu, PanelLeftClose, PanelLeftOpen, PlayCircle, X } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Lock, Menu, PanelLeftClose, PanelLeftOpen, PlayCircle, X } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { ProfileDrawer } from "@/components/ProfileDrawer";
 import type { LessonState } from "@/lib/data/catalog";
 import { uz } from "@/lib/i18n/uz";
 
-export type ShellLesson = { id: string; slug: string; title: string; state: LessonState; number: number };
+export type ShellLesson = {
+  id: string;
+  slug: string;
+  title: string;
+  state: LessonState;
+  number: number;
+  minutes: number | null;
+  /** Free preview lesson in a course the student has not bought. */
+  free: boolean;
+};
 export type ShellModule = { id: string; title: string; lessons: ShellLesson[] };
 export type ShellOutline = {
   courseSlug: string;
@@ -76,6 +85,92 @@ function ProgressRing({ percent }: { percent: number }) {
   );
 }
 
+function LessonLabel({ lesson }: { lesson: ShellLesson }) {
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-2">
+      <span className="min-w-0 flex-1">{lesson.title}</span>
+      {lesson.free ? (
+        <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-text">{uz.topbar.free}</span>
+      ) : null}
+      {lesson.minutes ? <span className="shrink-0 text-xs font-normal text-muted">{uz.topbar.minutes(lesson.minutes)}</span> : null}
+    </span>
+  );
+}
+
+/** Breadcrumb + "Oldingi / 3 / 28 / Keyingi" above every lesson. */
+function LessonBar({ outline, active }: { outline: ShellOutline; active: string }) {
+  const lessons = outline.modules.flatMap((m) => m.lessons);
+  const index = lessons.findIndex((l) => l.slug === active);
+  if (index < 0) return null;
+  const current = lessons[index]!;
+  const prev = lessons.slice(0, index).reverse().find((l) => l.state !== "locked") ?? null;
+  const next = lessons[index + 1] ?? null;
+  const href = (slug: string) => `/dars/${outline.courseSlug}/${slug}`;
+  const btn = "btn-secondary min-h-10 px-3 text-sm";
+
+  return (
+    <div className="sticky top-0 z-20 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-surface/95 px-4 py-2 backdrop-blur sm:px-6">
+      <nav aria-label={uz.topbar.breadcrumb} className="min-w-0 flex-1 text-sm text-muted">
+        <ol className="flex min-w-0 items-center gap-1.5">
+          <li className="hidden shrink-0 sm:block">
+            <Link href="/#kurslar" className="hover:text-text hover:underline">
+              {uz.topbar.courses}
+            </Link>
+          </li>
+          <li aria-hidden="true" className="hidden sm:block">
+            <ChevronRight className="size-3.5" />
+          </li>
+          <li className="hidden min-w-0 truncate md:block">
+            <Link href={`/kurs/${outline.courseSlug}`} className="hover:text-text hover:underline">
+              {outline.courseTitle}
+            </Link>
+          </li>
+          <li aria-hidden="true" className="hidden md:block">
+            <ChevronRight className="size-3.5" />
+          </li>
+          <li className="min-w-0 truncate font-medium text-text" aria-current="page">
+            {current.title}
+          </li>
+        </ol>
+      </nav>
+      <div className="flex items-center gap-2">
+        {prev ? (
+          <Link href={href(prev.slug)} className={btn} aria-label={`${uz.lesson.prev}: ${prev.title}`}>
+            <ChevronLeft className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">{uz.topbar.prev}</span>
+          </Link>
+        ) : (
+          <span className={`${btn} pointer-events-none opacity-50`} aria-hidden="true">
+            <ChevronLeft className="size-4" />
+            <span className="hidden sm:inline">{uz.topbar.prev}</span>
+          </span>
+        )}
+        <span className="min-w-14 text-center text-sm font-semibold tabular-nums" aria-label={uz.lesson.lessonOf(current.number, lessons.length)}>
+          {uz.topbar.position(current.number, lessons.length)}
+        </span>
+        {next ? (
+          next.state === "locked" ? (
+            <Link href={`/kurs/${outline.courseSlug}`} className={btn} aria-label={uz.topbar.lockedNext} title={uz.topbar.lockedNext}>
+              <span className="hidden sm:inline">{uz.topbar.next}</span>
+              <Lock className="size-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <Link href={href(next.slug)} className={btn} aria-label={`${uz.lesson.next}: ${next.title}`}>
+              <span className="hidden sm:inline">{uz.topbar.next}</span>
+              <ChevronRight className="size-4" aria-hidden="true" />
+            </Link>
+          )
+        ) : (
+          <span className={`${btn} pointer-events-none opacity-50`} aria-hidden="true">
+            <span className="hidden sm:inline">{uz.topbar.next}</span>
+            <ChevronRight className="size-4" />
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PathList({ outline, active, onNavigate }: { outline: ShellOutline; active: string | undefined; onNavigate?: () => void }) {
   return (
     <nav aria-label={uz.lesson.path} className="space-y-5">
@@ -93,7 +188,7 @@ function PathList({ outline, active, onNavigate }: { outline: ShellOutline; acti
                   {l.state === "locked" ? (
                     <span className={cls} aria-disabled="true">
                       <StateIcon state={l.state} />
-                      <span>{l.title}</span>
+                      <LessonLabel lesson={l} />
                     </span>
                   ) : (
                     <Link
@@ -103,7 +198,7 @@ function PathList({ outline, active, onNavigate }: { outline: ShellOutline; acti
                       onClick={onNavigate}
                     >
                       <StateIcon state={l.state} />
-                      <span>{l.title}</span>
+                      <LessonLabel lesson={l} />
                     </Link>
                   )}
                 </li>
@@ -231,7 +326,7 @@ export function LearnShell({
           >
             <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${outline.percent}%` }} />
           </div>
-          <span className="w-10 text-sm font-semibold">{outline.percent}%</span>
+          <span className="whitespace-nowrap text-sm font-semibold">{uz.topbar.complete(outline.percent)}</span>
         </div>
         <div className="ml-auto md:ml-0">
           <ProfileDrawer name={userName} avatarUrl={avatarUrl}>
@@ -287,6 +382,7 @@ export function LearnShell({
         </aside>
 
         <main id="main" className="min-w-0 flex-1 overflow-y-auto">
+          {active ? <LessonBar outline={outline} active={active} /> : null}
           {children}
         </main>
       </div>

@@ -277,6 +277,10 @@ const lessonSchema = z.object({
     .refine((v) => v === "" || youtubeId(v) !== null, e.youtubeInvalid),
   content_md: md,
   task_md: md,
+  duration_minutes: z.preprocess(
+    (v) => (v === null || v === "" ? null : Number(v)),
+    z.number().int().min(0).max(600).nullable(),
+  ),
   is_free_preview: checkbox,
   is_published: checkbox,
 });
@@ -292,6 +296,7 @@ export async function saveLesson(_prev: FormState, form: FormData): Promise<Form
     youtube_url: fd(form, "youtube_url") ?? "",
     content_md: fd(form, "content_md"),
     task_md: fd(form, "task_md"),
+    duration_minutes: fd(form, "duration_minutes") ?? null,
     is_free_preview: form.get("is_free_preview"),
     is_published: form.get("is_published"),
   });

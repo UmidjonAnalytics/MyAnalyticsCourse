@@ -36,6 +36,21 @@ export function LessonForm({
         </select>
       </div>
       <YouTubeField defaultValue={content?.youtube_url} />
+      <div className="max-w-48">
+        <label htmlFor="duration_minutes" className="label">
+          {t.duration}
+        </label>
+        <input
+          id="duration_minutes"
+          name="duration_minutes"
+          type="number"
+          min={0}
+          max={600}
+          inputMode="numeric"
+          defaultValue={lesson.duration_minutes ?? ""}
+          className="input"
+        />
+      </div>
       <MarkdownField name="content_md" label={t.content} defaultValue={content?.content_md} rows={12} />
       <MarkdownField name="task_md" label={t.task} defaultValue={content?.task_md} rows={6} hint={t.taskHint} />
       <div className="flex flex-wrap gap-x-8">
