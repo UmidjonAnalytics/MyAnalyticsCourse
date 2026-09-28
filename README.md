@@ -219,9 +219,11 @@ all others show the student site (`/admin` there is a 404).
 
   Netlify issues HTTPS certificates automatically (can take up to an hour after DNS changes).
 
-- **Before you have a domain:** `netlify.app` addresses can't have an `admin.` part. Either test
-  locally (below), or create a *second* Netlify project from the same repository (same env vars plus
-  `ADMIN_HOSTNAMES=myplatform-admin.netlify.app`), named e.g. `myplatform-admin`.
+- **Before you have a domain:** `netlify.app` addresses can't have an `admin.` part, so there is a
+  second Netlify project built from the same repository and branch:
+  **<https://myanalyticsplatform-admin.netlify.app>** (same env vars plus
+  `ADMIN_HOSTNAMES=myanalyticsplatform-admin.netlify.app`). Every push updates both sites.
+  Delete that project once `admin.<your-domain>` works.
 
 - **Locally on Windows:** open <http://admin.localhost:3000>. Chrome, Edge and Firefox send
   `*.localhost` to your own computer automatically. No hosts-file changes needed.
