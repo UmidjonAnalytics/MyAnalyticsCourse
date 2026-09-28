@@ -5,3 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Next.js runtime for Netlify (server pages, proxy, API routes). Declared here so every
+# Netlify site built from this repo uses it (e.g. the separate admin test site).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
