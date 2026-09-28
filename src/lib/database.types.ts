@@ -322,6 +322,24 @@ export type Database = {
       end_device_session: { Args: { p_device_id: string }; Returns: undefined };
       admin_reset_devices: { Args: { p_user_id: string }; Returns: number };
       check_rate_limit: { Args: { p_key: string; p_limit: number; p_window_seconds: number }; Returns: boolean };
+      admin_reorder: { Args: { p_table: "categories" | "courses" | "modules" | "lessons" | "bundles"; p_ids: string[] }; Returns: undefined };
+      admin_set_role: { Args: { p_user_id: string; p_role: Role }; Returns: undefined };
+      admin_purge: { Args: { p_entity: "course" | "module" | "lesson" | "bundle"; p_id: string }; Returns: undefined };
+      admin_students: {
+        Args: { p_search: string; p_limit: number; p_offset: number };
+        Returns: Array<{
+          id: string;
+          full_name: string;
+          phone: string | null;
+          email: string | null;
+          role: Role;
+          providers: string[];
+          created_at: Timestamp;
+          last_seen_at: Timestamp | null;
+          course_count: number;
+          total_count: number;
+        }>;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

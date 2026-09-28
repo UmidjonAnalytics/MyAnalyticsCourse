@@ -2,6 +2,7 @@ import { Avatar } from "@/components/Avatar";
 import { Logo } from "@/components/Logo";
 import { LogoutButton } from "@/components/LogoutButton";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { Toaster } from "@/components/admin/toast";
 import { visibleEmail } from "@/lib/auth/constants";
 import { requireAdmin } from "@/lib/auth/session";
 import { uz } from "@/lib/i18n/uz";
@@ -30,6 +31,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
         <main id="main" className="min-w-0 flex-1 p-4 sm:p-8">
           {children}
         </main>
+        <Toaster />
       </div>
     </div>
   );

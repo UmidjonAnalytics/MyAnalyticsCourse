@@ -14,7 +14,7 @@ payments (Payme / Click / Paynet) and a separate admin panel on `admin.<your-dom
 | All Uzbek UI text (edit wording here) | `src/lib/i18n/uz.ts` |
 | Platform name, support link | `src/lib/i18n/uz.ts` → `brand` |
 | Colours (design tokens) | `src/app/globals.css` |
-| Database tables, security rules | `supabase/migrations/0001…0003*.sql` |
+| Database tables, security rules | `supabase/migrations/0001…0004*.sql` |
 | Sample data | `supabase/seed.sql` |
 | Host routing, login checks, device limit | `src/proxy.ts` |
 | SMS providers (Eskiz) | `src/lib/sms/` |
@@ -42,10 +42,14 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 1. `supabase/migrations/0001_tables.sql`
 2. `supabase/migrations/0002_functions.sql`
 3. `supabase/migrations/0003_rls.sql`
-4. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+4. `supabase/migrations/0004_admin_content.sql` (covers storage, admin helpers)
+5. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
+> If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
+> for you and tells you when. (Already done: 0001–0004 on the current project.)
+>
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
 
@@ -283,6 +287,22 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - **Row Level Security** is on for every table: students only see their own data; lesson video/text
   only with access; only server code (secret key) marks orders paid and grants access.
 
+## Using the admin panel (short guide)
+
+- **Kurslar:** create a course (the slug is filled from the title), set price, category, cover
+  image and "E'lon qilingan". Drag rows by the dotted handle to change the catalog order
+  (keyboard: Tab to the handle, Space, arrow keys, Space).
+- **Modullar va darslar:** open a course → add modules → "Dars qo'shish" → the lesson editor opens:
+  YouTube link (checked and previewed), lesson text and business task in Markdown with live preview,
+  "Bepul ko'rish" (free preview) and "E'lon qilingan". New lessons start as drafts.
+- **To'plamlar:** tick the courses, set the bundle price; "arzonroq narx" lets owners of some
+  courses pay the bundle price minus the courses they already have.
+- **Talabalar:** search by name/phone/email → open a student → give access to a course or bundle
+  with a note ("Oldindan to'lagan"), cancel access, log them out of all devices, make admin.
+- **Arxiv:** archived items are hidden from students. "Qaytarish" restores; "Butunlay o'chirish"
+  asks twice and refuses content that someone bought or was given.
+- **Jurnal:** the last 200 admin actions.
+
 ## Testing payments in sandbox
 
 Comes in Phase 3 (Payme / Click / Paynet sandbox steps will be added here).
@@ -290,6 +310,10 @@ Comes in Phase 3 (Payme / Click / Paynet sandbox steps will be added here).
 ## Phases
 
 1. Foundation (done): setup, database, phone + Google login, linking, device limit, admin subdomain, Docker.
-2. Catalog, course/bundle pages, lesson layout with side panels, progress, admin content CRUD.
+2. Student experience + admin content (done): catalog with filters, course/bundle pages (upgrade
+   price), My courses, lesson layout (collapsible path panel, profile panel, mobile drawers),
+   YouTube + Markdown lessons, progress, locked lessons. Admin: courses, categories, modules and
+   lessons (drag to reorder), bundles, publish toggles, archive/restore/permanent delete, students
+   (grant/revoke access, reset devices, make admin), audit log.
 3. Payments: orders, promo codes, Payme / Click / Paynet, receipts, revenue dashboard.
 4. Practice: datasets, SQL exercises (DuckDB in the browser), automatic checking.

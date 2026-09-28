@@ -7,6 +7,8 @@ import {
   BookOpen,
   Database,
   FlaskConical,
+  FolderTree,
+  History,
   LayoutDashboard,
   ListTree,
   Package,
@@ -19,15 +21,17 @@ import { uz } from "@/lib/i18n/uz";
 // Links are written WITHOUT the /admin prefix: on admin.<domain> the proxy adds it.
 const items = [
   { href: "/", label: uz.admin.nav.dashboard, Icon: LayoutDashboard, ready: true },
-  { href: "/kurslar", label: uz.admin.nav.courses, Icon: BookOpen, ready: false },
-  { href: "/darslar", label: uz.admin.nav.modules, Icon: ListTree, ready: false },
-  { href: "/toplamlar", label: uz.admin.nav.bundles, Icon: Package, ready: false },
+  { href: "/kurslar", label: uz.admin.nav.courses, Icon: BookOpen, ready: true },
+  { href: "/darslar", label: uz.admin.nav.modules, Icon: ListTree, ready: true },
+  { href: "/kategoriyalar", label: uz.admin.nav.categories, Icon: FolderTree, ready: true },
+  { href: "/toplamlar", label: uz.admin.nav.bundles, Icon: Package, ready: true },
   { href: "/promo", label: uz.admin.nav.promo, Icon: Tag, ready: false },
   { href: "/buyurtmalar", label: uz.admin.nav.orders, Icon: Receipt, ready: false },
-  { href: "/talabalar", label: uz.admin.nav.students, Icon: Users, ready: false },
+  { href: "/talabalar", label: uz.admin.nav.students, Icon: Users, ready: true },
   { href: "/datasetlar", label: uz.admin.nav.datasets, Icon: Database, ready: false },
   { href: "/mashqlar", label: uz.admin.nav.exercises, Icon: FlaskConical, ready: false },
-  { href: "/arxiv", label: uz.admin.nav.archive, Icon: Archive, ready: false },
+  { href: "/arxiv", label: uz.admin.nav.archive, Icon: Archive, ready: true },
+  { href: "/jurnal", label: uz.admin.nav.audit, Icon: History, ready: true },
 ];
 
 export function AdminNav() {

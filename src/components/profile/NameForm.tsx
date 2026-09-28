@@ -1,22 +1,23 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { updateFullName, type NameFormState } from "@/app/(site)/profil/actions";
 import { Notice } from "@/components/Notice";
 import { uz } from "@/lib/i18n/uz";
 
 export function NameForm({ initialName }: { initialName: string }) {
+  const id = useId();
   const [state, action, pending] = useActionState<NameFormState, FormData>(updateFullName, { status: "idle" });
   return (
     <form action={action} className="space-y-3">
       <div>
-        <label htmlFor="full_name" className="label">
+        <label htmlFor={id} className="label">
           {uz.profile.fullName}
         </label>
         <div className="flex gap-2">
           <input
-            id="full_name"
+            id={id}
             name="full_name"
             defaultValue={initialName}
             placeholder={uz.profile.fullNamePlaceholder}

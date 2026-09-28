@@ -21,6 +21,6 @@ export async function updateFullName(_prev: NameFormState, formData: FormData): 
   const { error } = await supabase.from("profiles").update({ full_name: parsed.data }).eq("id", userId);
   if (error) return { status: "error", message: uz.errors.generic };
 
-  revalidatePath("/profil");
+  revalidatePath("/", "layout");
   return { status: "saved" };
 }
