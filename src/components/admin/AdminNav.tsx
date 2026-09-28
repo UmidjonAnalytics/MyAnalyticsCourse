@@ -28,8 +28,8 @@ const items = [
   { href: "/promo", label: uz.admin.nav.promo, Icon: Tag, ready: false },
   { href: "/buyurtmalar", label: uz.admin.nav.orders, Icon: Receipt, ready: false },
   { href: "/talabalar", label: uz.admin.nav.students, Icon: Users, ready: true },
-  { href: "/datasetlar", label: uz.admin.nav.datasets, Icon: Database, ready: false },
-  { href: "/mashqlar", label: uz.admin.nav.exercises, Icon: FlaskConical, ready: false },
+  { href: "/datasetlar", label: uz.admin.nav.datasets, Icon: Database, ready: true },
+  { href: "/mashqlar", label: uz.admin.nav.exercises, Icon: FlaskConical, ready: true },
   { href: "/arxiv", label: uz.admin.nav.archive, Icon: Archive, ready: true },
   { href: "/jurnal", label: uz.admin.nav.audit, Icon: History, ready: true },
 ];

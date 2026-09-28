@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft, ChevronRight, ClipboardList, Database } from "lucide-react";
+import { BookOpenText, ChevronLeft, ChevronRight, ClipboardList, Code2 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 import { LessonActions } from "@/components/learn/LessonActions";
+import { ExercisePanel, type PanelDataset } from "@/components/practice/ExercisePanel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getCourseOutline } from "@/lib/data/catalog";
 import { uz } from "@/lib/i18n/uz";
@@ -35,11 +36,29 @@ export default async function LessonPage({ params }: { params: Params }) {
   if (lesson.state === "locked") redirect(`/ruxsat-yoq?kurs=${encodeURIComponent(course)}`);
 
   const supabase = await createClient();
-  const { data: content } = await supabase
-    .from("lesson_contents")
-    .select("youtube_url, content_md, task_md")
-    .eq("lesson_id", lesson.id)
-    .maybeSingle();
+  const [{ data: content }, { data: exercises }, { data: claims }] = await Promise.all([
+    supabase.from("lesson_contents").select("youtube_url, content_md, task_md").eq("lesson_id", lesson.id).maybeSingle(),
+    // RLS returns only published exercises of lessons this student can open.
+    supabase
+      .from("exercises")
+      .select("id, title, task_md, points, exercise_datasets(datasets(id, name, table_name, row_count, columns))")
+      .eq("lesson_id", lesson.id)
+      .eq("is_published", true)
+      .is("archived_at", null)
+      .order("position"),
+    supabase.auth.getClaims(),
+  ]);
+  const exerciseIds = (exercises ?? []).map((x) => x.id);
+  const { data: submissions } =
+    exerciseIds.length > 0 && claims?.claims?.sub
+      ? await supabase
+          .from("exercise_submissions")
+          .select("id, exercise_id, sql, passed, created_at")
+          .eq("user_id", claims.claims.sub)
+          .in("exercise_id", exerciseIds)
+          .order("created_at", { ascending: false })
+          .limit(100)
+      : { data: [] };
 
   const currentModule = outline.modules.find((m) => m.lessons.some((l) => l.id === lesson.id));
   const prev = outline.lessons.slice(0, index).reverse().find((l) => l.state !== "locked") ?? null;
@@ -86,19 +105,51 @@ export default async function LessonPage({ params }: { params: Params }) {
         )}
       </div>
 
-      {content?.content_md ? <Markdown className="mt-8">{content.content_md}</Markdown> : null}
+      {content?.content_md ? (
+        <section className="mt-8" aria-labelledby="lesson-text">
+          <h2 id="lesson-text" className="flex items-center gap-2 text-lg font-bold">
+            <BookOpenText className="size-5 text-accent-text" aria-hidden="true" />
+            {uz.lesson.text}
+          </h2>
+          <Markdown className="mt-3">{content.content_md}</Markdown>
+        </section>
+      ) : null}
 
       {content?.task_md ? (
-        <section className="card mt-8 p-5 sm:p-6" aria-labelledby="task">
+        <section className="mt-8 rounded-xl border-l-4 border-accent bg-surface p-5 shadow-sm sm:p-6" aria-labelledby="task">
           <h2 id="task" className="flex items-center gap-2 text-lg font-bold">
             <ClipboardList className="size-5 text-accent-text" aria-hidden="true" />
             {uz.lesson.task}
           </h2>
           <Markdown className="mt-3">{content.task_md}</Markdown>
-          <p className="mt-4 flex items-center gap-2 rounded-lg bg-surface-muted px-3 py-2 text-sm text-muted">
-            <Database className="size-4 shrink-0" aria-hidden="true" />
-            {uz.lesson.practiceSoon}
-          </p>
+        </section>
+      ) : null}
+
+      {exercises && exercises.length > 0 ? (
+        <section className="mt-10" aria-labelledby="practice">
+          <h2 id="practice" className="flex items-center gap-2 text-xl font-bold">
+            <Code2 className="size-5 text-accent-text" aria-hidden="true" />
+            {uz.practice.title}
+          </h2>
+          <div className="mt-4 space-y-6">
+            {exercises.map((x, i) => (
+              <ExercisePanel
+                key={x.id}
+                exerciseId={x.id}
+                number={i + 1}
+                title={x.title}
+                points={x.points}
+                task={x.task_md ? <Markdown>{x.task_md}</Markdown> : null}
+                datasets={x.exercise_datasets
+                  .map((ed) => ed.datasets)
+                  .filter(Boolean)
+                  .map((d) => ({ ...d, columns: (d.columns ?? []) as PanelDataset["columns"] }))}
+                attempts={(submissions ?? [])
+                  .filter((s) => s.exercise_id === x.id)
+                  .map((s) => ({ id: s.id, sql: s.sql, passed: s.passed, created_at: s.created_at }))}
+              />
+            ))}
+          </div>
         </section>
       ) : null}
 

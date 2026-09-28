@@ -1,0 +1,5 @@
+{
+  "comment": "DuckDB engine version inside @duckdb/duckdb-wasm, and the extensions we self-host. Update the version when upgrading @duckdb/duckdb-wasm (the browser logs a warning if it differs).",
+  "version": "v1.5.4",
+  "extensions": ["parquet"]
+}

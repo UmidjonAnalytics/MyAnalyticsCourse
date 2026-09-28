@@ -235,6 +235,54 @@ export type RateLimit = {
   hits: number;
 };
 
+export type Dataset = {
+  id: string;
+  name: string;
+  table_name: string;
+  description: string;
+  storage_path: string;
+  columns: Json;
+  row_count: number;
+  preview: Json;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type Exercise = {
+  id: string;
+  lesson_id: string;
+  title: string;
+  task_md: string;
+  points: number;
+  position: number;
+  is_published: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type ExerciseDataset = { exercise_id: string; dataset_id: string };
+
+export type ExerciseKey = {
+  exercise_id: string;
+  reference_sql: string;
+  expected: Json | null;
+  check_rules: Json;
+  updated_at: Timestamp;
+};
+
+export type ExerciseSubmission = {
+  id: string;
+  user_id: string;
+  exercise_id: string;
+  sql: string;
+  passed: boolean;
+  score: number;
+  results: Json;
+  created_at: Timestamp;
+};
+
 export type ProductRow = {
   product_type: ProductType;
   product_id: string;
@@ -307,6 +355,31 @@ export type Database = {
       >;
       audit_log: Table<AuditLog, "action" | "entity", [Rel<"audit_log_actor_id_fkey", "actor_id", "profiles">]>;
       rate_limits: Table<RateLimit, "key">;
+      datasets: Table<Dataset, "name" | "table_name" | "storage_path">;
+      exercises: Table<Exercise, "lesson_id" | "title", [Rel<"exercises_lesson_id_fkey", "lesson_id", "lessons">]>;
+      exercise_datasets: Table<
+        ExerciseDataset,
+        "exercise_id" | "dataset_id",
+        [Rel<"exercise_datasets_exercise_id_fkey", "exercise_id", "exercises">, Rel<"exercise_datasets_dataset_id_fkey", "dataset_id", "datasets">]
+      >;
+      exercise_keys: Table<
+        ExerciseKey,
+        "exercise_id",
+        [
+          {
+            foreignKeyName: "exercise_keys_exercise_id_fkey";
+            columns: ["exercise_id"];
+            isOneToOne: true;
+            referencedRelation: "exercises";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      exercise_submissions: Table<
+        ExerciseSubmission,
+        "user_id" | "exercise_id" | "sql" | "passed",
+        [Rel<"exercise_submissions_exercise_id_fkey", "exercise_id", "exercises">, Rel<"exercise_submissions_user_id_fkey", "user_id", "profiles">]
+      >;
     };
     Views: {
       products: { Row: ProductRow; Relationships: [] };
@@ -322,6 +395,8 @@ export type Database = {
       end_device_session: { Args: { p_device_id: string }; Returns: undefined };
       admin_reset_devices: { Args: { p_user_id: string }; Returns: number };
       check_rate_limit: { Args: { p_key: string; p_limit: number; p_window_seconds: number }; Returns: boolean };
+      can_view_exercise: { Args: { p_exercise_id: string }; Returns: boolean };
+      can_access_dataset: { Args: { p_dataset_id: string }; Returns: boolean };
       admin_reorder: { Args: { p_table: "categories" | "courses" | "modules" | "lessons" | "bundles"; p_ids: string[] }; Returns: undefined };
       admin_set_role: { Args: { p_user_id: string; p_role: Role }; Returns: undefined };
       admin_purge: { Args: { p_entity: "course" | "module" | "lesson" | "bundle"; p_id: string }; Returns: undefined };

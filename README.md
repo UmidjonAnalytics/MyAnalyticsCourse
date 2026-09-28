@@ -43,12 +43,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 2. `supabase/migrations/0002_functions.sql`
 3. `supabase/migrations/0003_rls.sql`
 4. `supabase/migrations/0004_admin_content.sql` (covers storage, admin helpers)
-5. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+5. `supabase/migrations/0005_practice.sql` (datasets, SQL exercises, private datasets bucket)
+6. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0004 on the current project.)
+> for you and tells you when. (Already done: 0001–0005 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -304,6 +305,30 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - **Arxiv:** archived items are hidden from students. "Qaytarish" restores; "Butunlay o'chirish"
   asks twice and refuses content that someone bought or was given.
 - **Jurnal:** the last 200 admin actions.
+- **Datasetlar:** "Dataset yuklash" → pick a CSV (first row = column names). It is read and turned
+  into Parquet **in your browser**, you see the columns and first 20 rows, then it is stored in the
+  private `datasets` bucket. The "SQL dagi jadval nomi" (e.g. `sales`) is what students write in SQL.
+- **Mashqlar:** open a lesson (Modullar va darslar → lesson) → "Mashq qo'shish". In the exercise:
+  task text, points, tick the tables, write the **reference SQL** → "Namunani ishga tushirish" →
+  "Kutilgan natija sifatida saqlash" (this result is the hidden answer key). Choose the check rules
+  (column names, row count, all values with or without order, column totals) and write a hint for
+  each. Tick "E'lon qilingan" and save.
+
+## Practice: how SQL checking works
+
+- The student's SQL runs **in their browser** (DuckDB-WASM, files in `public/duckdb`, prepared by
+  `scripts/copy-duckdb.mjs` before every dev/build; the Parquet extension is downloaded once at build
+  time and then served from our own site).
+- Dataset files live in a **private** bucket. The browser gets a 2-minute signed link from
+  `/api/datasets/<id>/url`, only if the student can open a lesson that uses the dataset.
+- "Tekshirish" sends the result rows to `/api/exercises/<id>/check`. The server compares them with the
+  stored expected result (never sent to the browser) and returns pass/fail per rule with hints.
+  Every attempt is saved in `exercise_submissions` and shown under "Oldingi urinishlar".
+- Sample data + demo course: `python scripts/generate_sample_datasets.py sample-datasets` then
+  `SUPABASE_URL=... SUPABASE_SECRET_KEY=... python scripts/seed_practice.py sample-datasets`
+  (needs `pip install duckdb`; safe to run again).
+- Upgrading `@duckdb/duckdb-wasm`: update `version` in `src/lib/practice/duckdb-extensions.json`
+  (the browser console warns if it does not match).
 
 ## Testing payments in sandbox
 
@@ -311,11 +336,13 @@ Comes in Phase 3 (Payme / Click / Paynet sandbox steps will be added here).
 
 ## Phases
 
-1. Foundation (done): setup, database, phone + Google login, linking, device limit, admin subdomain, Docker.
-2. Student experience + admin content (done): catalog with filters, course/bundle pages (upgrade
+- Phase 1, Foundation (done): setup, database, phone + Google login, linking, device limit, admin subdomain, Docker.
+- Phase 2, Student experience + admin content (done): catalog with filters, course/bundle pages (upgrade
    price), My courses, lesson layout (collapsible path panel, profile panel, mobile drawers),
    YouTube + Markdown lessons, progress, locked lessons. Admin: courses, categories, modules and
    lessons (drag to reorder), bundles, publish toggles, archive/restore/permanent delete, students
    (grant/revoke access, reset devices, make admin), audit log.
-3. Payments: orders, promo codes, Payme / Click / Paynet, receipts, revenue dashboard.
-4. Practice: datasets, SQL exercises (DuckDB in the browser), automatic checking.
+- Phase 4, Practice (done, built before payments): datasets (CSV upload → Parquet, private storage),
+   SQL exercises with reference answers and check rules, in-browser SQL editor (DuckDB-WASM),
+   server-side checking with hints, submission history, sample "messy" retail data + demo SQL course.
+- Phase 3, Payments (next): orders, promo codes, Payme / Click / Paynet, receipts, revenue dashboard.

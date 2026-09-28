@@ -9,3 +9,4 @@ next-env.d.ts
 .vercel
 .netlify
 .DS_Store
+/public/duckdb/
