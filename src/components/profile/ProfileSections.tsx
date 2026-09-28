@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BadgeCheck, LifeBuoy } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -32,7 +33,7 @@ export async function ProfileSections({ compact = false }: { compact?: boolean }
       .order("last_seen_at", { ascending: false }),
     supabase
       .from("orders")
-      .select("id, final_amount, paid_at, courses(title), bundles(title)")
+      .select("id, number, final_amount, paid_at, provider, courses(title), bundles(title)")
       .eq("status", "paid")
       .order("paid_at", { ascending: false }),
     currentDeviceId(),
@@ -127,9 +128,18 @@ export async function ProfileSections({ compact = false }: { compact?: boolean }
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
                 <span>
                   <span className="block font-semibold">{o.courses?.title ?? o.bundles?.title ?? "—"}</span>
-                  {o.paid_at ? <span className="text-sm text-muted">{formatDate(o.paid_at)}</span> : null}
+                  <span className="text-sm text-muted">
+                    #{o.number}
+                    {o.paid_at ? ` · ${formatDate(o.paid_at)}` : ""}
+                    {o.provider ? ` · ${uz.checkout.providers[o.provider] ?? o.provider}` : ""}
+                  </span>
                 </span>
-                <span className="font-semibold">{formatSom(o.final_amount)}</span>
+                <span className="flex items-center gap-3">
+                  <span className="font-semibold">{formatSom(o.final_amount)}</span>
+                  <Link href={`/tolov/natija/${o.id}`} className="link text-sm">
+                    {uz.profile.receipt}
+                  </Link>
+                </span>
               </li>
             ))}
           </ul>

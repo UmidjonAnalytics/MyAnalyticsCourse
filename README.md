@@ -44,12 +44,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 3. `supabase/migrations/0003_rls.sql`
 4. `supabase/migrations/0004_admin_content.sql` (covers storage, admin helpers)
 5. `supabase/migrations/0005_practice.sql` (datasets, SQL exercises, private datasets bucket)
-6. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+6. `supabase/migrations/0006_payments.sql` (payments, promo usage, revenue stats)
+7. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0005 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0006 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -267,6 +268,12 @@ Other commands: `npm run build` (checks everything compiles), `npm run lint`, `n
 | `ENABLE_APPLE_LOGIN` | no | `true` shows the Apple button |
 | `ENABLE_FACEBOOK_LOGIN` | no | `true` shows the Facebook button |
 | `ADMIN_HOSTNAMES` | no | Extra admin hostnames, comma-separated |
+| `ENABLE_TEST_PAYMENTS` | test only | `true` shows "Sinov to'lovi" at checkout. Remove before launch |
+| `PAYME_MERCHANT_ID`, `PAYME_KEY` | for Payme | Cashbox ID and key (test key in sandbox) |
+| `PAYME_TEST` | for Payme | `true` = sandbox (test.paycom.uz) |
+| `PAYME_CARD_FORM` | no | `true` = on-site card form with SMS code (Subscribe API) |
+| `PAYME_IKPU_CODE`, `PAYME_PACKAGE_CODE` | if required | Fiscal receipt codes |
+| `CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_SECRET_KEY` | for Click | From the Click cabinet |
 | `DOMAIN`, `ACME_EMAIL` | VPS only | For `docker-compose.yml` + HTTPS |
 
 Secrets live only in Netlify's settings or in `.env.local` (never committed to Git).
@@ -330,11 +337,57 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - Upgrading `@duckdb/duckdb-wasm`: update `version` in `src/lib/practice/duckdb-extensions.json`
   (the browser console warns if it does not match).
 
-## Testing payments in sandbox
+## Payments (Payme, Click, Paynet)
 
-Comes in Phase 3 (Payme / Click / Paynet sandbox steps will be added here).
+How it works:
 
-## Phases
+1. The student clicks "Sotib olish" → **checkout** (`/tolov/kurs/<slug>` or `/tolov/toplam/<slug>`):
+   price, bundle upgrade discount, promo code, payment method. A **verified phone is required**.
+2. We create an `order` (status `pending`) and send the browser to the provider's page.
+3. The provider calls **our server** (webhook). Only that call marks the order `paid` and creates the
+   enrollments (inside one database transaction). Coming back to `/tolov/natija/<order>` only
+   *shows* the status; it never grants access.
+4. Refunds: Payme `CancelTransaction` after payment, or the admin's "Qaytarish" button, mark the order
+   `refunded` and revoke its courses. (Money itself is returned in the provider's cabinet.)
+
+Every callback is stored in `payment_events` and shown on the admin order page.
+
+### Test mode (now)
+
+`ENABLE_TEST_PAYMENTS=true` adds "Sinov to'lovi (test rejimi)" at checkout: a fake payment page with
+"To'lash (sinov)" / "Bekor qilish". No money moves. **Delete this variable before launch.**
+
+### Payme
+
+1. Get a merchant account at <https://merchant.payme.uz> (business contract). In the cashbox settings:
+   - **Endpoint URL:** `https://<your-domain>/api/payments/payme`
+   - Account field: `order_id`
+2. Netlify environment variables: `PAYME_MERCHANT_ID` (cashbox ID), `PAYME_KEY` (the **test key** while
+   testing, the real key later), `PAYME_TEST=true` while testing.
+3. Sandbox: <https://test.paycom.uz> → enter the endpoint URL, merchant ID and test key → run all the
+   sandbox scenarios (Payme checks error codes and repeated calls; the implementation follows them).
+4. On-site card form with SMS code (optional): `PAYME_CARD_FORM=true`. Needs the **Subscribe API**
+   enabled for your cashbox (ask Payme support). Card data goes from the browser straight to Payme.
+5. Fiscal receipts (if Payme asks for "detail"/IKPU): `PAYME_IKPU_CODE` and `PAYME_PACKAGE_CODE`
+   (educational services code from <https://tasnif.soliq.uz>).
+6. Launch: remove `PAYME_TEST`, put the real `PAYME_KEY`.
+
+### Click
+
+1. Merchant account at <https://merchant.click.uz>. In the service settings:
+   - **Prepare URL:** `https://<your-domain>/api/payments/click/prepare`
+   - **Complete URL:** `https://<your-domain>/api/payments/click/complete`
+2. Netlify: `CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_SECRET_KEY`.
+3. Click's test tool (in the merchant cabinet) sends Prepare/Complete requests; signatures are checked.
+4. On-site card form for Click: not built yet (Click's card-token API sends the card number through our
+   server; we will decide together once you have Click credentials).
+
+### Paynet
+
+Shown as "Tez orada" at checkout. Send Claude the Paynet merchant documentation; the protocol is not
+guessed.
+
+## Phases## Phases
 
 - Phase 1, Foundation (done): setup, database, phone + Google login, linking, device limit, admin subdomain, Docker.
 - Phase 2, Student experience + admin content (done): catalog with filters, course/bundle pages (upgrade
@@ -345,4 +398,6 @@ Comes in Phase 3 (Payme / Click / Paynet sandbox steps will be added here).
 - Phase 4, Practice (done, built before payments): datasets (CSV upload → Parquet, private storage),
    SQL exercises with reference answers and check rules, in-browser SQL editor (DuckDB-WASM),
    server-side checking with hints, submission history, sample "messy" retail data + demo SQL course.
-- Phase 3, Payments (next): orders, promo codes, Payme / Click / Paynet, receipts, revenue dashboard.
+- Phase 3, Payments (done, waiting for merchant credentials): orders, promo codes, checkout, Payme
+  (hosted + on-site card form) and Click webhooks, Paynet slot, test mode, receipts, admin orders/refunds,
+  promo codes, revenue dashboard.

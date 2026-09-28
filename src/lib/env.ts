@@ -21,6 +21,17 @@ const schema = z.object({
   ENABLE_FACEBOOK_LOGIN: flag,
   ADMIN_HOSTNAMES: z.string().optional(),
   DEV_LOGIN_CODE: z.string().regex(/^\d{6}$/).optional().or(z.literal("")),
+  // Payments (see README "Payments"). A provider is shown only when its keys are set.
+  ENABLE_TEST_PAYMENTS: flag,
+  PAYME_MERCHANT_ID: z.string().optional(),
+  PAYME_KEY: z.string().optional(),
+  PAYME_TEST: flag,
+  PAYME_CARD_FORM: flag,
+  PAYME_IKPU_CODE: z.string().optional(),
+  PAYME_PACKAGE_CODE: z.string().optional(),
+  CLICK_SERVICE_ID: z.string().optional(),
+  CLICK_MERCHANT_ID: z.string().optional(),
+  CLICK_SECRET_KEY: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

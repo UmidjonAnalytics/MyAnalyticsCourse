@@ -22,7 +22,8 @@ type Table<Row, Req extends keyof Row, Rels extends unknown[] = []> = {
 export type Role = "student" | "admin";
 export type ProductType = "course" | "bundle";
 export type OrderStatus = "pending" | "paid" | "cancelled" | "refunded";
-export type PaymentProviderName = "payme" | "click" | "paynet";
+export type PaymentProviderName = "payme" | "click" | "paynet" | "test";
+export type OrderProvider = PaymentProviderName | "free" | "manual";
 export type PaymentState = "created" | "performed" | "cancelled" | "cancelled_after_perform" | "failed";
 export type EnrollmentSource = "purchase" | "bundle" | "manual";
 export type ProgressStatus = "started" | "completed";
@@ -163,7 +164,8 @@ export type Order = {
   final_amount: number;
   promo_code_id: string | null;
   status: OrderStatus;
-  provider: PaymentProviderName | null;
+  provider: OrderProvider | null;
+  number: number;
   created_at: Timestamp;
   updated_at: Timestamp;
   paid_at: Timestamp | null;
@@ -180,6 +182,8 @@ export type Payment = {
   state: PaymentState;
   provider_state: number | null;
   reason: number | null;
+  public_id: number;
+  provider_time: number | null;
   created_at: Timestamp;
   performed_at: Timestamp | null;
   cancelled_at: Timestamp | null;
@@ -194,6 +198,7 @@ export type PaymentEvent = {
   received_at: Timestamp;
   processed: boolean;
   error: string | null;
+  order_id: string | null;
 };
 
 export type Enrollment = {
@@ -338,7 +343,7 @@ export type Database = {
         ]
       >;
       payments: Table<Payment, "order_id" | "provider" | "amount", [Rel<"payments_order_id_fkey", "order_id", "orders">]>;
-      payment_events: Table<PaymentEvent, "provider" | "payload">;
+      payment_events: Table<PaymentEvent, "provider" | "payload", [Rel<"payment_events_order_id_fkey", "order_id", "orders">]>;
       enrollments: Table<
         Enrollment,
         "user_id" | "course_id" | "source",
@@ -395,6 +400,22 @@ export type Database = {
       end_device_session: { Args: { p_device_id: string }; Returns: undefined };
       admin_reset_devices: { Args: { p_user_id: string }; Returns: number };
       check_rate_limit: { Args: { p_key: string; p_limit: number; p_window_seconds: number }; Returns: boolean };
+      order_mark_paid: { Args: { p_order_id: string; p_provider: string }; Returns: undefined };
+      order_mark_refunded: { Args: { p_order_id: string; p_reason: string }; Returns: undefined };
+      payme_check_order: { Args: { p_order_id: string; p_amount_tiyin: number }; Returns: Json };
+      payme_create: { Args: { p_tx: string; p_time: number; p_amount_tiyin: number; p_order_id: string }; Returns: Json };
+      payme_perform: { Args: { p_tx: string }; Returns: Json };
+      payme_cancel: { Args: { p_tx: string; p_reason: number }; Returns: Json };
+      payme_check: { Args: { p_tx: string }; Returns: Json };
+      payme_statement: { Args: { p_from: number; p_to: number }; Returns: Json };
+      click_prepare: { Args: { p_click_trans_id: string; p_order_id: string; p_amount: number }; Returns: Json };
+      click_complete: {
+        Args: { p_click_trans_id: string; p_prepare_id: number; p_order_id: string; p_amount: number; p_click_error: number };
+        Returns: Json;
+      };
+      test_payment: { Args: { p_order_id: string; p_success: boolean }; Returns: undefined };
+      admin_refund_order: { Args: { p_order_id: string; p_note: string }; Returns: undefined };
+      admin_dashboard_stats: { Args: Record<string, never>; Returns: Json };
       can_view_exercise: { Args: { p_exercise_id: string }; Returns: boolean };
       can_access_dataset: { Args: { p_dataset_id: string }; Returns: boolean };
       admin_reorder: { Args: { p_table: "categories" | "courses" | "modules" | "lessons" | "bundles"; p_ids: string[] }; Returns: undefined };
