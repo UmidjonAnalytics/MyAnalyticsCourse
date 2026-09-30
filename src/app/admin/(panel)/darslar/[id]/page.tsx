@@ -5,6 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { AddAssignmentButton } from "@/components/admin/AddAssignmentButton";
 import { AddExerciseButton } from "@/components/admin/AddExerciseButton";
 import { LessonForm } from "@/components/admin/LessonForm";
+import { QuizEditor, type EditorQuizQuestion } from "@/components/admin/QuizEditor";
+import { ResourceManager } from "@/components/admin/ResourceManager";
 import { uz } from "@/lib/i18n/uz";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,6 +25,27 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
     supabase.from("exercises").select("id, title, is_published").eq("lesson_id", id).is("archived_at", null).order("position"),
     supabase.from("assignments").select("id, title, is_published").eq("lesson_id", id).is("archived_at", null).order("position"),
   ]);
+  const [{ data: quiz }, { count: quizAttempts }, { data: resources }] = await Promise.all([
+    supabase
+      .from("quiz_questions")
+      .select("id, prompt, options, multiple, quiz_answer_keys(correct, explanation)")
+      .eq("lesson_id", id)
+      .order("position"),
+    supabase.from("quiz_attempts").select("id", { count: "exact", head: true }).eq("lesson_id", id),
+    supabase.from("lesson_resources").select("id, title, file_path, url, size_bytes").eq("lesson_id", id).order("position"),
+  ]);
+  const quizQuestions: EditorQuizQuestion[] = (quiz ?? []).map((q) => {
+    const key = Array.isArray(q.quiz_answer_keys) ? q.quiz_answer_keys[0] : q.quiz_answer_keys;
+    return {
+      id: q.id,
+      key: q.id,
+      prompt: q.prompt,
+      options: q.options,
+      multiple: q.multiple,
+      correct: key?.correct ?? [],
+      explanation: key?.explanation ?? "",
+    };
+  });
 
   return (
     <div className="max-w-5xl">
@@ -60,6 +83,21 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
         ) : (
           <p className="mt-2 text-sm text-muted">{uz.admin.exercises.empty}</p>
         )}
+      </section>
+
+      <section className="card mt-6 p-5 sm:p-6" aria-labelledby="lesson-resources">
+        <h2 id="lesson-resources" className="mb-3 text-lg font-bold">
+          {uz.admin.resources.title}
+        </h2>
+        <ResourceManager lessonId={lesson.id} resources={resources ?? []} />
+      </section>
+
+      <section className="card mt-6 p-5 sm:p-6" aria-labelledby="lesson-quiz">
+        <h2 id="lesson-quiz" className="text-lg font-bold">
+          {uz.admin.quiz.title}
+        </h2>
+        <p className="mb-4 mt-1 text-sm text-muted">{uz.admin.quiz.lead}</p>
+        <QuizEditor lessonId={lesson.id} passPercent={lesson.quiz_pass_percent} questions={quizQuestions} attempts={quizAttempts ?? 0} />
       </section>
 
       <section className="card mt-6 p-5 sm:p-6" aria-labelledby="lesson-assignments">

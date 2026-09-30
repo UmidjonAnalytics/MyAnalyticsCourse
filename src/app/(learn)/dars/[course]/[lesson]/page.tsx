@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { BookOpenText, ChevronLeft, ChevronRight, ClipboardList, Clock, Code2, FileSpreadsheet } from "lucide-react";
+import { Award, BookOpenText, ChevronLeft, ChevronRight, ClipboardList, Clock, Code2, Download, ExternalLink, FileSpreadsheet, Paperclip } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
+import { CertificateButton } from "@/components/course/CertificateButton";
 import { AssignmentPanel, type AssignmentAttempt } from "@/components/learn/AssignmentPanel";
 import { Discussion } from "@/components/learn/Discussion";
 import { LessonActions } from "@/components/learn/LessonActions";
 import { LessonTabs, type LessonTab } from "@/components/learn/LessonTabs";
+import { QuizPanel } from "@/components/learn/QuizPanel";
 import { ExercisePanel, type PanelDataset } from "@/components/practice/ExercisePanel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getCourseOutline } from "@/lib/data/catalog";
@@ -33,13 +35,42 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return data ? { title: `${data.lesson.title} · ${data.outline.course.title}` } : {};
 }
 
+/** File name for downloads. Apostrophes (o', g') are dropped: storage double-encodes them. */
+function downloadName(title: string) {
+  return title
+    .replace(/['‘’ʻʼ`]/g, "")
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
+function formatSize(bytes: number | null) {
+  if (!bytes) return "";
+  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/** Short-lived download links for lesson materials (private bucket). */
+async function resourceLinks(resources: { file_path: string | null; title: string }[]) {
+  const storage = createAdminClient().storage.from("lesson-resources");
+  return Promise.all(
+    resources.map(async (r) => {
+      if (!r.file_path) return null;
+      const ext = r.file_path.split(".").pop() ?? "";
+      const safe = downloadName(r.title) || "material";
+      const { data } = await storage.createSignedUrl(r.file_path, 60 * 60 * 3, { download: ext ? `${safe}.${ext}` : safe });
+      return data?.signedUrl ?? null;
+    }),
+  );
+}
+
 /** Short-lived links to an uploaded workbook (the bucket is private). */
 async function workbookLinks(path: string, title: string) {
   const storage = createAdminClient().storage.from("assignment-files");
   const ext = path.split(".").pop() ?? "xlsx";
   const [view, download] = await Promise.all([
     storage.createSignedUrl(path, 60 * 60 * 3),
-    storage.createSignedUrl(path, 60 * 60 * 3, { download: `${title.slice(0, 80)}.${ext}` }),
+    storage.createSignedUrl(path, 60 * 60 * 3, { download: `${downloadName(title) || "topshiriq"}.${ext}` }),
   ]);
   return { view: view.data?.signedUrl ?? null, download: download.data?.signedUrl ?? null };
 }
@@ -72,6 +103,24 @@ export default async function LessonPage({ params }: { params: Params }) {
       .order("position"),
     supabase.rpc("lesson_comments_list", { p_lesson_id: lesson.id }),
   ]);
+  const [{ data: quizQuestions }, { data: quizAttempts }, { data: lessonRow }, { data: resources }] = await Promise.all([
+    supabase.from("quiz_questions").select("id, prompt, options, multiple").eq("lesson_id", lesson.id).order("position"),
+    supabase
+      .from("quiz_attempts")
+      .select("id, correct, total, passed, created_at")
+      .eq("lesson_id", lesson.id)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase.from("lessons").select("quiz_pass_percent").eq("id", lesson.id).single(),
+    supabase.from("lesson_resources").select("id, title, file_path, url, size_bytes").eq("lesson_id", lesson.id).order("position"),
+  ]);
+  const resourceUrls = await resourceLinks(resources ?? []);
+  const hasQuiz = (quizQuestions?.length ?? 0) > 0;
+  const courseDone = outline.total > 0 && outline.completed === outline.total;
+  const { data: cert } = courseDone
+    ? await supabase.from("certificates").select("code").eq("course_id", outline.course.id).eq("user_id", user.id).is("revoked_at", null).maybeSingle()
+    : { data: null };
 
   const exerciseIds = (exercises ?? []).map((x) => x.id);
   const assignmentIds = (assignments ?? []).map((a) => a.id);
@@ -131,6 +180,38 @@ export default async function LessonPage({ params }: { params: Params }) {
             {uz.lesson.text}
           </h2>
           <Markdown className="mt-3">{content.content_md}</Markdown>
+        </section>
+      ) : null}
+
+      {resources && resources.length > 0 ? (
+        <section aria-labelledby="resources">
+          <h2 id="resources" className="flex items-center gap-2 text-lg font-bold">
+            <Paperclip className="size-5 text-accent-text" aria-hidden="true" />
+            {uz.resources.title}
+          </h2>
+          <ul className="card mt-3 divide-y divide-border">
+            {resources.map((r, i) => {
+              const href = r.url ?? resourceUrls[i];
+              if (!href) return null;
+              return (
+                <li key={r.id}>
+                  <a
+                    href={href}
+                    {...(r.url ? { target: "_blank", rel: "noopener noreferrer" } : { download: true })}
+                    className="flex min-h-12 items-center gap-3 px-4 py-2 hover:bg-surface-muted"
+                  >
+                    {r.url ? (
+                      <ExternalLink className="size-4 shrink-0 text-accent-text" aria-hidden="true" />
+                    ) : (
+                      <Download className="size-4 shrink-0 text-accent-text" aria-hidden="true" />
+                    )}
+                    <span className="min-w-0 flex-1 font-semibold">{r.title}</span>
+                    <span className="shrink-0 text-xs text-muted">{r.url ? uz.resources.open : formatSize(r.size_bytes) || uz.resources.download}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       ) : null}
 
@@ -223,6 +304,24 @@ export default async function LessonPage({ params }: { params: Params }) {
   const tabs: LessonTab[] = [
     { id: "tavsif", label: uz.tabs.description, content: description },
     ...(practiceCount > 0 ? [{ id: "amaliyot", label: uz.tabs.practice, count: practiceCount, content: practice }] : []),
+    ...(hasQuiz
+      ? [
+          {
+            id: "test",
+            label: uz.quiz.tab,
+            count: quizQuestions!.length,
+            content: (
+              <QuizPanel
+                lessonId={lesson.id}
+                courseSlug={outline.course.slug}
+                passPercent={lessonRow?.quiz_pass_percent ?? 70}
+                questions={quizQuestions!}
+                attempts={quizAttempts ?? []}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       id: "muhokama",
       label: uz.tabs.discussion,
@@ -259,8 +358,27 @@ export default async function LessonPage({ params }: { params: Params }) {
           courseSlug={outline.course.slug}
           completed={lesson.status === "completed"}
           nextHref={next ? href(next.slug) : null}
+          quizRequired={hasQuiz}
         />
       </header>
+
+      {courseDone ? (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-accent bg-accent-soft p-4 sm:p-5">
+          <p className="flex items-center gap-2 font-semibold">
+            <Award className="size-5 text-accent-text" aria-hidden="true" />
+            {uz.certificate.courseDone}
+          </p>
+          {cert ? (
+            <Link href={`/sertifikat/${cert.code}`} className="btn-primary">
+              {uz.certificate.view}
+            </Link>
+          ) : (
+            <div className="w-full sm:w-auto">
+              <CertificateButton courseId={outline.course.id} className="btn-primary w-full sm:w-auto" />
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <div className="mt-6">
         <LessonTabs key={lesson.id} tabs={tabs} />

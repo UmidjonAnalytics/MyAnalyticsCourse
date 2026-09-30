@@ -42,6 +42,19 @@ const fd = (form: FormData, key: string) => {
 
 // ------------------------------------------------------------------ courses
 
+// Textarea with one item per line -> text[] (max 20 items, 300 chars each).
+const lines = z
+  .string()
+  .default("")
+  .transform((v) =>
+    v
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .slice(0, 20)
+      .map((l) => l.slice(0, 300)),
+  );
+
 const courseSchema = z.object({
   id: z.uuid().optional(),
   title,
@@ -54,6 +67,17 @@ const courseSchema = z.object({
   description: md,
   cover_url: optionalUrl,
   price,
+  level: z
+    .string()
+    .transform((v) => v || null)
+    .pipe(z.enum(["beginner", "intermediate", "advanced"]).nullable()),
+  instructor_id: z
+    .string()
+    .transform((v) => v || null)
+    .pipe(z.uuid().nullable()),
+  outcomes: lines,
+  audience: lines,
+  requirements: lines,
   is_published: checkbox,
 });
 
@@ -69,6 +93,11 @@ export async function saveCourse(_prev: FormState, form: FormData): Promise<Form
     description: fd(form, "description"),
     cover_url: fd(form, "cover_url") ?? "",
     price: fd(form, "price") ?? "",
+    level: fd(form, "level") ?? "",
+    instructor_id: fd(form, "instructor_id") ?? "",
+    outcomes: fd(form, "outcomes") ?? "",
+    audience: fd(form, "audience") ?? "",
+    requirements: fd(form, "requirements") ?? "",
     is_published: form.get("is_published"),
   });
   if (!parsed.success) return { status: "error", error: firstError(parsed.error) };

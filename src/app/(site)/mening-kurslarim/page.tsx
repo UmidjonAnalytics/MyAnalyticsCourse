@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { Award, BookOpen } from "lucide-react";
 import { CourseCover } from "@/components/CourseCover";
 import { Notice } from "@/components/Notice";
 import { requireUser } from "@/lib/auth/session";
@@ -22,6 +22,9 @@ export default async function MyCoursesPage() {
     .eq("is_published", true)
     .is("archived_at", null)
     .order("position");
+
+  const { data: certs } = await supabase.from("certificates").select("course_id, code").eq("user_id", user.id).is("revoked_at", null);
+  const certBy = new Map((certs ?? []).map((c) => [c.course_id, c.code]));
 
   const outlines = (await Promise.all((courses ?? []).map((c) => getCourseOutline(c.slug, user.id)))).filter(
     (o): o is NonNullable<typeof o> => o !== null,
@@ -71,9 +74,19 @@ export default async function MyCoursesPage() {
                   >
                     <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
                   </div>
-                  {next ? (
+                  {certBy.has(course.id) ? (
+                    <Link href={`/sertifikat/${certBy.get(course.id)}`} className="btn-primary mt-4 w-full">
+                      <Award className="size-4" aria-hidden="true" />
+                      {uz.certificate.view}
+                    </Link>
+                  ) : percent === 100 ? (
+                    <Link href={`/kurs/${course.slug}`} className="btn-primary mt-4 w-full">
+                      <Award className="size-4" aria-hidden="true" />
+                      {uz.certificate.get}
+                    </Link>
+                  ) : next ? (
                     <Link href={`/dars/${course.slug}/${next.slug}`} className="btn-primary mt-4 w-full">
-                      {percent === 100 ? uz.myCourses.review : completed > 0 ? uz.myCourses.continue : uz.myCourses.start}
+                      {completed > 0 ? uz.myCourses.continue : uz.myCourses.start}
                     </Link>
                   ) : null}
                 </div>

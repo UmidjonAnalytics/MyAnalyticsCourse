@@ -4,17 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Archive,
+  Award,
   BookOpen,
   Database,
   FileSpreadsheet,
   FlaskConical,
   FolderTree,
   History,
+  GraduationCap,
   LayoutDashboard,
   ListTree,
   MessageSquare,
   Package,
   Receipt,
+  Star,
   Tag,
   Users,
 } from "lucide-react";
@@ -34,6 +37,9 @@ const items = [
   { href: "/mashqlar", label: uz.admin.nav.exercises, Icon: FlaskConical, ready: true },
   { href: "/topshiriqlar", label: uz.admin.nav.assignments, Icon: FileSpreadsheet, ready: true },
   { href: "/muhokamalar", label: uz.admin.nav.comments, Icon: MessageSquare, ready: true },
+  { href: "/sharhlar", label: uz.admin.nav.reviews, Icon: Star, ready: true },
+  { href: "/sertifikatlar", label: uz.admin.nav.certificates, Icon: Award, ready: true },
+  { href: "/oqituvchilar", label: uz.admin.nav.instructors, Icon: GraduationCap, ready: true },
   { href: "/arxiv", label: uz.admin.nav.archive, Icon: Archive, ready: true },
   { href: "/jurnal", label: uz.admin.nav.audit, Icon: History, ready: true },
 ];

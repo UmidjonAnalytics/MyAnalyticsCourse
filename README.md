@@ -46,12 +46,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 5. `supabase/migrations/0005_practice.sql` (datasets, SQL exercises, private datasets bucket)
 6. `supabase/migrations/0006_payments.sql` (payments, promo usage, revenue stats)
 7. `supabase/migrations/0007_discussions_assignments.sql` (lesson length, discussions, Excel assignments)
-8. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+8. `supabase/migrations/0008_quizzes_resources_certificates.sql` (quizzes, lesson materials, certificates, instructors, reviews)
+9. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0007 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0008 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -358,6 +359,27 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - Top bar on every lesson: breadcrumb, "Oldingi · 3 / 28 · Keyingi" (a lock if the next lesson
   needs a purchase). Lesson length ("Davomiyligi") is set in the lesson editor and shown in the path.
 
+## Quizzes, materials, certificates, course page
+
+- **Test (quiz)**: admin → lesson → "Test savollari". Multiple-choice (one or several correct
+  answers), explanation per question, pass mark (default 70%). Put it on the last lesson of a module.
+  Students get a "Test" tab; a lesson with a test is completed only by passing it. Before passing,
+  students only see which questions are wrong (and explanations for the right ones); correct answers
+  are revealed after they pass. Answer keys never leave the server.
+- **Dars materiallari**: admin → lesson → upload files (up to 50 MB, private `lesson-resources`
+  bucket, 3-hour download links) or add https links. Shown under the lesson text.
+- **Sertifikat**: when every lesson is completed **and** every test passed, the student gets
+  "Sertifikatni olish" (course page, last lesson, Mening kurslarim). The database function
+  `issue_certificate` checks this itself, so it cannot be faked from the browser. The student's
+  full name must be filled in the profile. The certificate lives at `/sertifikat/<code>` (public
+  verification page), prints as one A4 landscape page ("PDF sifatida saqlash"), and has LinkedIn /
+  Telegram share buttons. Admin → "Sertifikatlar" can revoke one (e.g. after a refund).
+- **Kurs sahifasi**: admin → course → level, instructor, "Nimani o'rganasiz", "Kimlar uchun",
+  "Talablar" (one per line). "Kursga kiradi" (lessons, length, tasks, tests, materials) is counted
+  automatically. Admin → "O'qituvchilar" for the instructor card.
+- **Sharhlar**: only students who own the course can rate it (1–5 stars + text), one review each,
+  shown as "Ism F.". Admin → "Sharhlar" can hide one.
+
 ## Payments (Payme, Click, Paynet)
 
 How it works:
@@ -424,3 +446,5 @@ guessed.
   promo codes, revenue dashboard.
 - Lesson page upgrade (done): top Prev/Next bar, Tavsif / Amaliyot / Muhokama tabs, discussions,
   Excel assignments with answer boxes, lesson length.
+- Learning + sales upgrade (done): quizzes, lesson materials, certificates with public verification,
+  richer course page (outcomes, audience, requirements, level, instructor, "includes"), reviews.

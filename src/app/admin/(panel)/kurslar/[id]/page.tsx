@@ -11,9 +11,10 @@ export const metadata: Metadata = { title: uz.admin.courses.edit };
 export default async function EditCourse({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: course }, { data: categories }] = await Promise.all([
+  const [{ data: course }, { data: categories }, { data: instructors }] = await Promise.all([
     supabase.from("courses").select("*").eq("id", id).maybeSingle(),
     supabase.from("categories").select("*").order("position"),
+    supabase.from("instructors").select("id, name").order("name"),
   ]);
   if (!course) notFound();
 
@@ -32,7 +33,7 @@ export default async function EditCourse({ params }: { params: Promise<{ id: str
           </Link>
         </div>
       </div>
-      <CourseForm course={course} categories={categories ?? []} />
+      <CourseForm course={course} categories={categories ?? []} instructors={instructors ?? []} />
       <p className="mt-4 text-sm text-muted">
         <ExternalLink className="mr-1 inline size-3.5" aria-hidden="true" />
         {uz.admin.courses.view}: <span className="font-mono">/kurs/{course.slug}</span>

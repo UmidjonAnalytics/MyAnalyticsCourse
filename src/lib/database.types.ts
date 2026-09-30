@@ -74,9 +74,83 @@ export type Course = {
   monthly_price: number | null;
   is_published: boolean;
   position: number;
+  instructor_id: string | null;
+  level: CourseLevel | null;
+  outcomes: string[];
+  audience: string[];
+  requirements: string[];
   created_at: Timestamp;
   updated_at: Timestamp;
   archived_at: Timestamp | null;
+};
+
+export type CourseLevel = "beginner" | "intermediate" | "advanced";
+
+export type Instructor = {
+  id: string;
+  name: string;
+  title: string;
+  bio_md: string;
+  photo_url: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type QuizQuestion = {
+  id: string;
+  lesson_id: string;
+  position: number;
+  prompt: string;
+  options: string[];
+  multiple: boolean;
+  created_at: Timestamp;
+};
+
+export type QuizAnswerKey = { question_id: string; correct: number[]; explanation: string };
+
+export type QuizAttempt = {
+  id: string;
+  user_id: string;
+  lesson_id: string;
+  answers: Json;
+  correct: number;
+  total: number;
+  passed: boolean;
+  created_at: Timestamp;
+};
+
+export type LessonResource = {
+  id: string;
+  lesson_id: string;
+  title: string;
+  file_path: string | null;
+  url: string | null;
+  size_bytes: number | null;
+  position: number;
+  created_at: Timestamp;
+};
+
+export type CourseReview = {
+  id: string;
+  course_id: string;
+  user_id: string;
+  rating: number;
+  body: string;
+  hidden_at: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type Certificate = {
+  id: string;
+  code: string;
+  user_id: string;
+  course_id: string;
+  full_name: string;
+  course_title: string;
+  hours: number;
+  issued_at: Timestamp;
+  revoked_at: Timestamp | null;
 };
 
 export type Module = {
@@ -100,6 +174,7 @@ export type Lesson = {
   is_free_preview: boolean;
   is_published: boolean;
   duration_minutes: number | null;
+  quiz_pass_percent: number;
   created_at: Timestamp;
   updated_at: Timestamp;
   archived_at: Timestamp | null;
@@ -357,7 +432,42 @@ export type Database = {
       profiles: Table<Profile, "id">;
       device_sessions: Table<DeviceSession, "user_id" | "device_id", [Rel<"device_sessions_user_id_fkey", "user_id", "profiles">]>;
       categories: Table<Category, "name" | "slug">;
-      courses: Table<Course, "title" | "slug", [Rel<"courses_category_id_fkey", "category_id", "categories">]>;
+      courses: Table<
+        Course,
+        "title" | "slug",
+        [Rel<"courses_category_id_fkey", "category_id", "categories">, Rel<"courses_instructor_id_fkey", "instructor_id", "instructors">]
+      >;
+      instructors: Table<Instructor, "name">;
+      quiz_questions: Table<QuizQuestion, "lesson_id" | "prompt" | "options", [Rel<"quiz_questions_lesson_id_fkey", "lesson_id", "lessons">]>;
+      quiz_answer_keys: Table<
+        QuizAnswerKey,
+        "question_id" | "correct",
+        [
+          {
+            foreignKeyName: "quiz_answer_keys_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: true;
+            referencedRelation: "quiz_questions";
+            referencedColumns: ["id"];
+          },
+        ]
+      >;
+      quiz_attempts: Table<
+        QuizAttempt,
+        "user_id" | "lesson_id" | "answers" | "correct" | "total" | "passed",
+        [Rel<"quiz_attempts_lesson_id_fkey", "lesson_id", "lessons">, Rel<"quiz_attempts_user_id_fkey", "user_id", "profiles">]
+      >;
+      lesson_resources: Table<LessonResource, "lesson_id" | "title", [Rel<"lesson_resources_lesson_id_fkey", "lesson_id", "lessons">]>;
+      course_reviews: Table<
+        CourseReview,
+        "course_id" | "user_id" | "rating",
+        [Rel<"course_reviews_course_id_fkey", "course_id", "courses">, Rel<"course_reviews_user_id_fkey", "user_id", "profiles">]
+      >;
+      certificates: Table<
+        Certificate,
+        "code" | "user_id" | "course_id" | "full_name" | "course_title",
+        [Rel<"certificates_course_id_fkey", "course_id", "courses">, Rel<"certificates_user_id_fkey", "user_id", "profiles">]
+      >;
       modules: Table<Module, "course_id" | "title", [Rel<"modules_course_id_fkey", "course_id", "courses">]>;
       lessons: Table<
         Lesson,
@@ -474,6 +584,28 @@ export type Database = {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       has_course_access: { Args: { p_course_id: string }; Returns: boolean };
       can_view_lesson: { Args: { p_lesson_id: string }; Returns: boolean };
+      course_lesson_features: {
+        Args: { p_course_id: string };
+        Returns: Array<{ lesson_id: string; quiz_questions: number; exercises: number; assignments: number; resources: number }>;
+      };
+      course_reviews_public: {
+        Args: { p_course_id: string };
+        Returns: Array<{ id: string; rating: number; body: string; created_at: Timestamp; author: string }>;
+      };
+      issue_certificate: { Args: { p_course_id: string }; Returns: string };
+      certificate_public: {
+        Args: { p_code: string };
+        Returns: Array<{
+          code: string;
+          full_name: string;
+          course_title: string;
+          course_slug: string;
+          hours: number;
+          issued_at: Timestamp;
+          instructor_name: string | null;
+          instructor_title: string | null;
+        }>;
+      };
       register_device_session: { Args: { p_device_id: string; p_user_agent: string }; Returns: undefined };
       touch_device_session: { Args: { p_device_id: string }; Returns: boolean };
       device_revoke_reason: { Args: { p_device_id: string }; Returns: string | null };

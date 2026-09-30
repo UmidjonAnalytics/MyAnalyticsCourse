@@ -18,6 +18,7 @@
   --danger: #a3261b;
   --danger-soft: #f7e5e2;
   --warning-soft: #f6ecd6;
+  --star: #b7791f; /* rating stars: 3.6:1 on --bg (non-text graphic) */
   --focus: #0b6e4f;
   color-scheme: light;
 }
@@ -38,6 +39,7 @@
   --danger: #f08a7e;
   --danger-soft: #3a211e;
   --warning-soft: #3a3120;
+  --star: #f2b84b;
   --focus: #5cc9a0;
   color-scheme: dark;
 }
@@ -58,6 +60,7 @@
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-warning-soft: var(--warning-soft);
+  --color-star: var(--star);
 
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
