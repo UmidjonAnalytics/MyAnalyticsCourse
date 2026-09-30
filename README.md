@@ -70,7 +70,23 @@ Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 ---
 
-## 2. Deploy to Netlify (gives you a live URL)
+## 2. Hosting
+
+**Current host: Vercel** (project `myanalyticsplatform`, Hobby plan, deploys automatically on every
+push to `claude/affectionate-cori-zfh711`).
+
+- Student site: <https://myanalyticsplatform.vercel.app>
+- Admin panel: <https://myanalyticsplatform-admin.vercel.app> (same project, second address;
+  `ADMIN_HOSTNAMES=myanalyticsplatform-admin.vercel.app`). One build serves both.
+- Environment variables: Vercel → project → **Settings → Environment Variables** (same names as the
+  table below). After changing one, redeploy (Deployments → ⋯ → Redeploy).
+- The Hobby plan is for non-commercial use: move to Vercel Pro or the VPS (Docker) before selling.
+- With a real domain later: add `example.uz` and `admin.example.uz` under **Settings → Domains**;
+  any `admin.` host is the admin panel automatically.
+
+The Netlify instructions below are kept in case you switch back (paused: build credits ran out).
+
+### Netlify (previous host)
 
 1. Go to <https://app.netlify.com> → sign up with GitHub (free plan, no card).
 2. **Add new project** → **Import an existing project** → **GitHub** → allow access → choose
