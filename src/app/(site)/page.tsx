@@ -3,7 +3,9 @@ import { BookOpen, CheckCircle2, Layers } from "lucide-react";
 import { CourseCover } from "@/components/CourseCover";
 import { Notice } from "@/components/Notice";
 import { getCurrentUser } from "@/lib/auth/session";
+import { PathCardView, ProjectCardView } from "@/components/catalog/Cards";
 import { listCatalog } from "@/lib/data/catalog";
+import { listPaths, listProjects } from "@/lib/data/paths";
 import { isSupabaseConfigured } from "@/lib/env";
 import { formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
@@ -15,7 +17,10 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
   const { yonalish } = await searchParams;
   const configured = isSupabaseConfigured();
   const user = configured ? await getCurrentUser() : null;
-  const catalog = configured ? await listCatalog(await createClient(), user?.id ?? null) : null;
+  const supabase = configured ? await createClient() : null;
+  const [catalog, paths, projects] = supabase
+    ? await Promise.all([listCatalog(supabase, user?.id ?? null), listPaths(supabase), listProjects(supabase)])
+    : [null, [], []];
 
   const activeCat = catalog?.categories.find((c) => c.slug === yonalish) ?? null;
   const courses = catalog ? catalog.courses.filter((c) => !activeCat || c.category_id === activeCat.id) : [];
@@ -41,6 +46,27 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
           </a>
         </div>
       </section>
+
+      {paths.length > 0 ? (
+        <section className="mt-16" aria-labelledby="paths-title">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 id="paths-title" className="text-2xl font-bold">
+                {uz.home.pathsTitle}
+              </h2>
+              <p className="mt-1 text-muted">{uz.home.pathsLead}</p>
+            </div>
+            <Link href="/yollar" className="text-sm font-semibold text-accent-text hover:underline">
+              {uz.home.seeAll}
+            </Link>
+          </div>
+          <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {paths.slice(0, 3).map((p) => (
+              <PathCardView key={p.id} p={p} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section id="kurslar" className="mt-16 scroll-mt-8" aria-labelledby="courses-title">
         <h2 id="courses-title" className="text-2xl font-bold">
@@ -132,6 +158,27 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
                 <p className="mt-3 flex-1 text-sm">{b.courseIds.map((id) => courseTitle.get(id)).filter(Boolean).join(" · ")}</p>
                 <p className="mt-4 text-right font-bold">{formatSom(b.price)}</p>
               </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {projects.length > 0 ? (
+        <section className="mt-14" aria-labelledby="projects-title">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 id="projects-title" className="text-2xl font-bold">
+                {uz.home.projectsTitle}
+              </h2>
+              <p className="mt-1 text-muted">{uz.home.projectsLead}</p>
+            </div>
+            <Link href="/loyihalar" className="text-sm font-semibold text-accent-text hover:underline">
+              {uz.home.seeAll}
+            </Link>
+          </div>
+          <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.slice(0, 3).map((p) => (
+              <ProjectCardView key={p.id} p={p} />
             ))}
           </ul>
         </section>

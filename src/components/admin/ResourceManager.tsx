@@ -13,7 +13,9 @@ const MAX_BYTES = 50 * 1024 * 1024;
 
 export type ResourceRow = { id: string; title: string; file_path: string | null; url: string | null; size_bytes: number | null };
 
-export function ResourceManager({ lessonId, resources }: { lessonId: string; resources: ResourceRow[] }) {
+/** Materials of a lesson or of a portfolio project. */
+export function ResourceManager({ owner, resources }: { owner: { lessonId: string } | { projectId: string }; resources: ResourceRow[] }) {
+  const ownerId = "lessonId" in owner ? owner.lessonId : owner.projectId;
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
@@ -35,7 +37,7 @@ export function ResourceManager({ lessonId, resources }: { lessonId: string; res
     if (file.size > MAX_BYTES) return toast(t.fileError, "error");
     const name = title.trim() || file.name.replace(/\.[^.]+$/, "");
     const ext = (file.name.split(".").pop() ?? "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8);
-    const path = `${lessonId}/${crypto.randomUUID()}${ext ? `.${ext}` : ""}`;
+    const path = `${ownerId}/${crypto.randomUUID()}${ext ? `.${ext}` : ""}`;
     setUploading(true);
     const supabase = createClient();
     const { error } = await supabase.storage.from("lesson-resources").upload(path, file, { upsert: false, contentType: file.type || undefined });
@@ -43,7 +45,7 @@ export function ResourceManager({ lessonId, resources }: { lessonId: string; res
       setUploading(false);
       return toast(t.fileError, "error");
     }
-    const res = await addResource({ lessonId, title: name, file_path: path, url: null, size_bytes: file.size });
+    const res = await addResource({ ...owner, title: name, file_path: path, url: null, size_bytes: file.size });
     setUploading(false);
     if (!done(res)) await supabase.storage.from("lesson-resources").remove([path]);
   };
@@ -51,7 +53,7 @@ export function ResourceManager({ lessonId, resources }: { lessonId: string; res
   const addLink = () =>
     startTransition(async () => {
       if (!title.trim()) return void toast(t.titleRequired, "error");
-      done(await addResource({ lessonId, title, file_path: null, url: url.trim(), size_bytes: null }));
+      done(await addResource({ ...owner, title, file_path: null, url: url.trim(), size_bytes: null }));
     });
 
   const remove = (id: string) => {

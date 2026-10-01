@@ -121,7 +121,8 @@ export type QuizAttempt = {
 
 export type LessonResource = {
   id: string;
-  lesson_id: string;
+  lesson_id: string | null;
+  project_id: string | null;
   title: string;
   file_path: string | null;
   url: string | null;
@@ -151,6 +152,60 @@ export type Certificate = {
   hours: number;
   issued_at: Timestamp;
   revoked_at: Timestamp | null;
+};
+
+export type LearningPath = {
+  id: string;
+  title: string;
+  slug: string;
+  short_description: string;
+  description: string;
+  cover_url: string | null;
+  level: CourseLevel | null;
+  outcomes: string[];
+  bundle_id: string | null;
+  is_published: boolean;
+  position: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type LearningPathCourse = { path_id: string; course_id: string; position: number };
+
+export type Project = {
+  id: string;
+  course_id: string;
+  title: string;
+  slug: string;
+  short_description: string;
+  brief_md: string;
+  steps_md: string;
+  deliverable_md: string;
+  cover_url: string | null;
+  level: CourseLevel | null;
+  hours: number | null;
+  skills: string[];
+  is_published: boolean;
+  position: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type SubmissionStatus = "submitted" | "approved" | "needs_work";
+
+export type ProjectSubmission = {
+  id: string;
+  project_id: string;
+  user_id: string;
+  link_url: string;
+  summary: string;
+  is_public: boolean;
+  status: SubmissionStatus;
+  feedback: string;
+  submitted_at: Timestamp;
+  reviewed_at: Timestamp | null;
 };
 
 export type Module = {
@@ -377,7 +432,8 @@ export type LessonComment = {
 
 export type Assignment = {
   id: string;
-  lesson_id: string;
+  lesson_id: string | null;
+  project_id: string | null;
   title: string;
   instructions_md: string;
   embed_url: string | null;
@@ -457,7 +513,11 @@ export type Database = {
         "user_id" | "lesson_id" | "answers" | "correct" | "total" | "passed",
         [Rel<"quiz_attempts_lesson_id_fkey", "lesson_id", "lessons">, Rel<"quiz_attempts_user_id_fkey", "user_id", "profiles">]
       >;
-      lesson_resources: Table<LessonResource, "lesson_id" | "title", [Rel<"lesson_resources_lesson_id_fkey", "lesson_id", "lessons">]>;
+      lesson_resources: Table<
+        LessonResource,
+        "title",
+        [Rel<"lesson_resources_lesson_id_fkey", "lesson_id", "lessons">, Rel<"lesson_resources_project_id_fkey", "project_id", "projects">]
+      >;
       course_reviews: Table<
         CourseReview,
         "course_id" | "user_id" | "rating",
@@ -527,7 +587,23 @@ export type Database = {
         "lesson_id" | "user_id" | "body",
         [Rel<"lesson_comments_lesson_id_fkey", "lesson_id", "lessons">, Rel<"lesson_comments_user_id_fkey", "user_id", "profiles">]
       >;
-      assignments: Table<Assignment, "lesson_id" | "title", [Rel<"assignments_lesson_id_fkey", "lesson_id", "lessons">]>;
+      assignments: Table<
+        Assignment,
+        "title",
+        [Rel<"assignments_lesson_id_fkey", "lesson_id", "lessons">, Rel<"assignments_project_id_fkey", "project_id", "projects">]
+      >;
+      learning_paths: Table<LearningPath, "title" | "slug", [Rel<"learning_paths_bundle_id_fkey", "bundle_id", "bundles">]>;
+      learning_path_courses: Table<
+        LearningPathCourse,
+        "path_id" | "course_id",
+        [Rel<"learning_path_courses_path_id_fkey", "path_id", "learning_paths">, Rel<"learning_path_courses_course_id_fkey", "course_id", "courses">]
+      >;
+      projects: Table<Project, "course_id" | "title" | "slug", [Rel<"projects_course_id_fkey", "course_id", "courses">]>;
+      project_submissions: Table<
+        ProjectSubmission,
+        "project_id" | "user_id" | "link_url",
+        [Rel<"project_submissions_project_id_fkey", "project_id", "projects">, Rel<"project_submissions_user_id_fkey", "user_id", "profiles">]
+      >;
       assignment_questions: Table<
         AssignmentQuestion,
         "assignment_id" | "prompt",
@@ -593,6 +669,11 @@ export type Database = {
         Returns: Array<{ id: string; rating: number; body: string; created_at: Timestamp; author: string }>;
       };
       issue_certificate: { Args: { p_course_id: string }; Returns: string };
+      can_view_project: { Args: { p_project_id: string }; Returns: boolean };
+      project_showcase: {
+        Args: { p_project_id: string };
+        Returns: Array<{ id: string; link_url: string; summary: string; reviewed_at: Timestamp | null; author: string }>;
+      };
       certificate_public: {
         Args: { p_code: string };
         Returns: Array<{

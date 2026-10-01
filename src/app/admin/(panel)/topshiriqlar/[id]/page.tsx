@@ -16,7 +16,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
   const { data: assignment } = await supabase
     .from("assignments")
     .select(
-      "id, title, instructions_md, points, is_published, embed_url, file_path, allow_download, lesson_id, lessons(title, courses(title)), assignment_submissions(count)",
+      "id, title, instructions_md, points, is_published, embed_url, file_path, allow_download, lesson_id, project_id, lessons(title, courses(title)), projects(title, courses(title)), assignment_submissions(count)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -47,16 +47,18 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
   return (
     <div className="max-w-5xl">
       <Link
-        href={`/darslar/${assignment.lesson_id}`}
+        href={assignment.lesson_id ? `/darslar/${assignment.lesson_id}` : `/loyihalar/${assignment.project_id}`}
         className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted hover:text-text"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        {t.toLesson}
+        {assignment.lesson_id ? t.toLesson : uz.admin.projects.toProject}
       </Link>
       <div className="mb-6 mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm text-muted">
-            {assignment.lessons?.courses?.title} · {assignment.lessons?.title}
+            {assignment.lessons
+              ? `${assignment.lessons.courses?.title} · ${assignment.lessons.title}`
+              : `${assignment.projects?.courses?.title} · ${assignment.projects?.title}`}
           </p>
           <h1 className="text-2xl font-bold">{assignment.title}</h1>
           <p className="text-sm text-muted">{t.submissions(assignment.assignment_submissions[0]?.count ?? 0)}</p>

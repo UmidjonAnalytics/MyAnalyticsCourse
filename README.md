@@ -47,12 +47,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 6. `supabase/migrations/0006_payments.sql` (payments, promo usage, revenue stats)
 7. `supabase/migrations/0007_discussions_assignments.sql` (lesson length, discussions, Excel assignments)
 8. `supabase/migrations/0008_quizzes_resources_certificates.sql` (quizzes, lesson materials, certificates, instructors, reviews)
-9. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+9. `supabase/migrations/0009_paths_projects.sql` (learning paths, portfolio projects)
+10. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0008 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0009 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -396,6 +397,23 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - **Sharhlar**: only students who own the course can rate it (1–5 stars + text), one review each,
   shown as "Ism F.". Admin → "Sharhlar" can hide one.
 
+## Learning paths and portfolio projects
+
+- **O'quv yo'llari** (admin → "O'quv yo'llari"): an ordered list of courses, e.g. Excel → Power BI →
+  Python. Public pages `/yollar` and `/yol/<slug>` show the steps as a timeline with each student's
+  progress, certificates and a "Davom etish" button. Link a bundle to show "Butun yo'lni sotib olish"
+  with the price compared to buying separately.
+- **Portfolio loyihalar** (admin → "Portfolio loyihalar"): a real business case attached to a course.
+  - The **brief** is public (good for marketing); steps, files, checkpoint questions and submitting
+    need the course.
+  - Files reuse lesson materials; checkpoint questions reuse Excel assignments.
+  - Students submit an https link (Drive, OneDrive, Power BI, Tableau Public, GitHub) and their key
+    findings. You approve or return it with feedback on the project's admin page; a changed
+    submission goes back to "Tekshirilmoqda" automatically. Students cannot approve themselves
+    (checked in the database).
+  - Approved work whose author allowed it appears under "Talabalar ishlari" (name shown as "Ism F.").
+- Both appear on the home page, in the top menu, and projects on their course page.
+
 ## Payments (Payme, Click, Paynet)
 
 How it works:
@@ -464,3 +482,5 @@ guessed.
   Excel assignments with answer boxes, lesson length.
 - Learning + sales upgrade (done): quizzes, lesson materials, certificates with public verification,
   richer course page (outcomes, audience, requirements, level, instructor, "includes"), reviews.
+- Paths + projects (done): learning paths with progress, portfolio projects with checkpoints,
+  instructor review and a public showcase.

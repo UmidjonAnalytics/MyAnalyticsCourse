@@ -408,3 +408,195 @@ export async function saveBundle(_prev: FormState, form: FormData): Promise<Form
   if (!id) redirect(`/toplamlar/${bundleId}`);
   return { status: "saved" };
 }
+
+// ------------------------------------------------------------------ learning paths
+
+const level = z
+  .string()
+  .default("")
+  .transform((v) => v || null)
+  .pipe(z.enum(["beginner", "intermediate", "advanced"]).nullable());
+
+const pathSchema = z.object({
+  id: z.uuid().optional(),
+  title,
+  slug,
+  short_description: z.string().trim().max(300).default(""),
+  description: md,
+  cover_url: optionalUrl,
+  level,
+  outcomes: lines,
+  bundle_id: z
+    .string()
+    .default("")
+    .transform((v) => v || null)
+    .pipe(z.uuid().nullable()),
+  is_published: checkbox,
+  course_ids: z
+    .string()
+    .default("")
+    .transform((v) => v.split(",").filter(Boolean))
+    .pipe(z.array(z.uuid()).max(30)),
+});
+
+export async function savePath(_prev: FormState, form: FormData): Promise<FormState> {
+  const ctx = await adminContext();
+  if (!ctx) return { status: "error", error: e.forbidden };
+  const parsed = pathSchema.safeParse({
+    id: fd(form, "id") || undefined,
+    title: fd(form, "title"),
+    slug: fd(form, "slug"),
+    short_description: fd(form, "short_description"),
+    description: fd(form, "description"),
+    cover_url: fd(form, "cover_url") ?? "",
+    level: fd(form, "level"),
+    outcomes: fd(form, "outcomes"),
+    bundle_id: fd(form, "bundle_id"),
+    is_published: form.get("is_published"),
+    course_ids: fd(form, "course_ids"),
+  });
+  if (!parsed.success) return { status: "error", error: firstError(parsed.error) };
+  const { id: existingId, course_ids, ...values } = parsed.data;
+  if (values.is_published && course_ids.length === 0) return { status: "error", error: uz.admin.paths.noCourses };
+
+  let id = existingId;
+  if (id) {
+    const { error } = await ctx.supabase.from("learning_paths").update(values).eq("id", id);
+    if (error) return { status: "error", error: dbErrorMessage(error) };
+  } else {
+    const { count } = await ctx.supabase.from("learning_paths").select("id", { count: "exact", head: true });
+    const { data, error } = await ctx.supabase
+      .from("learning_paths")
+      .insert({ ...values, position: (count ?? 0) + 1 })
+      .select("id")
+      .single();
+    if (error) return { status: "error", error: dbErrorMessage(error) };
+    id = data.id;
+  }
+  const { error: delErr } = await ctx.supabase.from("learning_path_courses").delete().eq("path_id", id);
+  if (delErr) return { status: "error", error: dbErrorMessage(delErr) };
+  if (course_ids.length > 0) {
+    const { error: insErr } = await ctx.supabase
+      .from("learning_path_courses")
+      .insert([...new Set(course_ids)].map((course_id, i) => ({ path_id: id!, course_id, position: i + 1 })));
+    if (insErr) return { status: "error", error: dbErrorMessage(insErr) };
+  }
+  await audit(ctx.supabase, ctx.userId, existingId ? "update" : "create", "path", id, { title: values.title, courses: course_ids.length });
+  refresh();
+  if (!existingId) redirect(`/yollar/${id}`);
+  return { status: "saved" };
+}
+
+export async function deletePath(id: string): Promise<ActionResult> {
+  const ctx = await adminContext();
+  if (!ctx) return forbidden;
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: e.invalid };
+  const { error } = await ctx.supabase.from("learning_paths").delete().eq("id", id);
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  await audit(ctx.supabase, ctx.userId, "delete", "path", id);
+  refresh();
+  redirect("/yollar");
+}
+
+// ------------------------------------------------------------------ portfolio projects
+
+const projectSchema = z.object({
+  id: z.uuid().optional(),
+  course_id: z.uuid(e.invalid),
+  title,
+  slug,
+  short_description: z.string().trim().max(300).default(""),
+  brief_md: md,
+  steps_md: md,
+  deliverable_md: md,
+  cover_url: optionalUrl,
+  level,
+  hours: z
+    .string()
+    .default("")
+    .transform((v) => (v.trim() ? Number(v) : null))
+    .pipe(z.number().int().min(0).max(200).nullable()),
+  skills: lines,
+  is_published: checkbox,
+});
+
+export async function saveProject(_prev: FormState, form: FormData): Promise<FormState> {
+  const ctx = await adminContext();
+  if (!ctx) return { status: "error", error: e.forbidden };
+  const parsed = projectSchema.safeParse({
+    id: fd(form, "id") || undefined,
+    course_id: fd(form, "course_id"),
+    title: fd(form, "title"),
+    slug: fd(form, "slug"),
+    short_description: fd(form, "short_description"),
+    brief_md: fd(form, "brief_md"),
+    steps_md: fd(form, "steps_md"),
+    deliverable_md: fd(form, "deliverable_md"),
+    cover_url: fd(form, "cover_url") ?? "",
+    level: fd(form, "level"),
+    hours: fd(form, "hours"),
+    skills: fd(form, "skills"),
+    is_published: form.get("is_published"),
+  });
+  if (!parsed.success) return { status: "error", error: firstError(parsed.error) };
+  const { id, ...values } = parsed.data;
+  if (id) {
+    const { error } = await ctx.supabase.from("projects").update(values).eq("id", id);
+    if (error) return { status: "error", error: dbErrorMessage(error) };
+    await audit(ctx.supabase, ctx.userId, "update", "project", id, { title: values.title });
+    refresh();
+    return { status: "saved" };
+  }
+  const { count } = await ctx.supabase.from("projects").select("id", { count: "exact", head: true }).eq("course_id", values.course_id);
+  const { data, error } = await ctx.supabase
+    .from("projects")
+    .insert({ ...values, position: (count ?? 0) + 1 })
+    .select("id")
+    .single();
+  if (error) return { status: "error", error: dbErrorMessage(error) };
+  await audit(ctx.supabase, ctx.userId, "create", "project", data.id, { title: values.title });
+  refresh();
+  redirect(`/loyihalar/${data.id}`);
+}
+
+export async function deleteProject(id: string): Promise<ActionResult> {
+  const ctx = await adminContext();
+  if (!ctx) return forbidden;
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: e.invalid };
+  // Files are not removed by the database cascade: collect them first.
+  const [{ data: files }, { data: workbooks }] = await Promise.all([
+    ctx.supabase.from("lesson_resources").select("file_path").eq("project_id", id).not("file_path", "is", null),
+    ctx.supabase.from("assignments").select("file_path").eq("project_id", id).not("file_path", "is", null),
+  ]);
+  const { error } = await ctx.supabase.from("projects").delete().eq("id", id);
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  const resourcePaths = (files ?? []).map((f) => f.file_path).filter((p): p is string => Boolean(p));
+  const workbookPaths = (workbooks ?? []).map((f) => f.file_path).filter((p): p is string => Boolean(p));
+  if (resourcePaths.length) await ctx.supabase.storage.from("lesson-resources").remove(resourcePaths);
+  if (workbookPaths.length) await ctx.supabase.storage.from("assignment-files").remove(workbookPaths);
+  await audit(ctx.supabase, ctx.userId, "delete", "project", id);
+  refresh();
+  redirect("/loyihalar");
+}
+
+const reviewSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(["approved", "needs_work"]),
+  feedback: z.string().trim().max(4000),
+});
+
+export async function reviewSubmission(input: z.input<typeof reviewSchema>): Promise<ActionResult> {
+  const ctx = await adminContext();
+  if (!ctx) return forbidden;
+  const parsed = reviewSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: e.invalid };
+  const { id, ...values } = parsed.data;
+  const { error } = await ctx.supabase
+    .from("project_submissions")
+    .update({ ...values, reviewed_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  await audit(ctx.supabase, ctx.userId, values.status === "approved" ? "approve" : "return", "submission", id);
+  refresh();
+  return { ok: true, message: uz.admin.projects.reviewSaved };
+}

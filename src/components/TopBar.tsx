@@ -15,9 +15,17 @@ export function TopBar({ user, admin = false }: { user: CurrentUser | null; admi
         <Logo suffix={admin ? uz.brand.adminName : undefined} />
         <nav className="flex items-center gap-1 sm:gap-2" aria-label="Asosiy menyu">
           {!admin ? (
-            <Link href="/#kurslar" className="btn-ghost hidden sm:inline-flex">
-              {uz.nav.catalog}
-            </Link>
+            <>
+              <Link href="/#kurslar" className="btn-ghost hidden sm:inline-flex">
+                {uz.nav.catalog}
+              </Link>
+              <Link href="/yollar" className="btn-ghost hidden md:inline-flex">
+                {uz.nav.paths}
+              </Link>
+              <Link href="/loyihalar" className="btn-ghost hidden md:inline-flex">
+                {uz.nav.projects}
+              </Link>
+            </>
           ) : null}
           {user && !admin ? (
             <Link href="/mening-kurslarim" className="btn-ghost">

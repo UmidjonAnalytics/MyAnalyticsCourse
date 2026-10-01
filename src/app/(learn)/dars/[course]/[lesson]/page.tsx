@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Award, BookOpenText, ChevronLeft, ChevronRight, ClipboardList, Clock, Code2, Download, ExternalLink, FileSpreadsheet, Paperclip } from "lucide-react";
+import { Award, BookOpenText, ChevronLeft, ChevronRight, ClipboardList, Clock, Code2 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 import { CertificateButton } from "@/components/course/CertificateButton";
-import { AssignmentPanel, type AssignmentAttempt } from "@/components/learn/AssignmentPanel";
+import { AssignmentsList, loadAssignments, loadMaterials, MaterialsList } from "@/components/learn/Blocks";
 import { Discussion } from "@/components/learn/Discussion";
 import { LessonActions } from "@/components/learn/LessonActions";
 import { LessonTabs, type LessonTab } from "@/components/learn/LessonTabs";
@@ -12,9 +12,7 @@ import { QuizPanel } from "@/components/learn/QuizPanel";
 import { ExercisePanel, type PanelDataset } from "@/components/practice/ExercisePanel";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getCourseOutline } from "@/lib/data/catalog";
-import { officeViewerUrl } from "@/lib/embed";
 import { uz } from "@/lib/i18n/uz";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { youtubeEmbedUrl, youtubeId } from "@/lib/youtube";
 
@@ -35,46 +33,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return data ? { title: `${data.lesson.title} · ${data.outline.course.title}` } : {};
 }
 
-/** File name for downloads. Apostrophes (o', g') are dropped: storage double-encodes them. */
-function downloadName(title: string) {
-  return title
-    .replace(/['‘’ʻʼ`]/g, "")
-    .replace(/[\\/:*?"<>|]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 80);
-}
-
-function formatSize(bytes: number | null) {
-  if (!bytes) return "";
-  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-}
-
-/** Short-lived download links for lesson materials (private bucket). */
-async function resourceLinks(resources: { file_path: string | null; title: string }[]) {
-  const storage = createAdminClient().storage.from("lesson-resources");
-  return Promise.all(
-    resources.map(async (r) => {
-      if (!r.file_path) return null;
-      const ext = r.file_path.split(".").pop() ?? "";
-      const safe = downloadName(r.title) || "material";
-      const { data } = await storage.createSignedUrl(r.file_path, 60 * 60 * 3, { download: ext ? `${safe}.${ext}` : safe });
-      return data?.signedUrl ?? null;
-    }),
-  );
-}
-
-/** Short-lived links to an uploaded workbook (the bucket is private). */
-async function workbookLinks(path: string, title: string) {
-  const storage = createAdminClient().storage.from("assignment-files");
-  const ext = path.split(".").pop() ?? "xlsx";
-  const [view, download] = await Promise.all([
-    storage.createSignedUrl(path, 60 * 60 * 3),
-    storage.createSignedUrl(path, 60 * 60 * 3, { download: `${downloadName(title) || "topshiriq"}.${ext}` }),
-  ]);
-  return { view: view.data?.signedUrl ?? null, download: download.data?.signedUrl ?? null };
-}
-
 export default async function LessonPage({ params }: { params: Params }) {
   const { course, lesson: lessonSlug } = await params;
   const data = await load(course, lessonSlug);
@@ -85,7 +43,7 @@ export default async function LessonPage({ params }: { params: Params }) {
 
   const supabase = await createClient();
   // RLS returns only published items of lessons this student can open.
-  const [{ data: content }, { data: exercises }, { data: assignments }, { data: comments }] = await Promise.all([
+  const [{ data: content }, { data: exercises }, excel, { data: comments }, materials] = await Promise.all([
     supabase.from("lesson_contents").select("youtube_url, content_md, task_md").eq("lesson_id", lesson.id).maybeSingle(),
     supabase
       .from("exercises")
@@ -94,16 +52,11 @@ export default async function LessonPage({ params }: { params: Params }) {
       .eq("is_published", true)
       .is("archived_at", null)
       .order("position"),
-    supabase
-      .from("assignments")
-      .select("id, title, instructions_md, embed_url, file_path, allow_download, points, assignment_questions(id, prompt, answer_type, placeholder, position)")
-      .eq("lesson_id", lesson.id)
-      .eq("is_published", true)
-      .is("archived_at", null)
-      .order("position"),
+    loadAssignments(supabase, { lessonId: lesson.id }, user.id),
     supabase.rpc("lesson_comments_list", { p_lesson_id: lesson.id }),
+    loadMaterials(supabase, { lessonId: lesson.id }),
   ]);
-  const [{ data: quizQuestions }, { data: quizAttempts }, { data: lessonRow }, { data: resources }] = await Promise.all([
+  const [{ data: quizQuestions }, { data: quizAttempts }, { data: lessonRow }] = await Promise.all([
     supabase.from("quiz_questions").select("id, prompt, options, multiple").eq("lesson_id", lesson.id).order("position"),
     supabase
       .from("quiz_attempts")
@@ -113,9 +66,7 @@ export default async function LessonPage({ params }: { params: Params }) {
       .order("created_at", { ascending: false })
       .limit(50),
     supabase.from("lessons").select("quiz_pass_percent").eq("id", lesson.id).single(),
-    supabase.from("lesson_resources").select("id, title, file_path, url, size_bytes").eq("lesson_id", lesson.id).order("position"),
   ]);
-  const resourceUrls = await resourceLinks(resources ?? []);
   const hasQuiz = (quizQuestions?.length ?? 0) > 0;
   const courseDone = outline.total > 0 && outline.completed === outline.total;
   const { data: cert } = courseDone
@@ -123,35 +74,23 @@ export default async function LessonPage({ params }: { params: Params }) {
     : { data: null };
 
   const exerciseIds = (exercises ?? []).map((x) => x.id);
-  const assignmentIds = (assignments ?? []).map((a) => a.id);
-  const [{ data: submissions }, { data: assignmentSubs }, links] = await Promise.all([
+  const { data: submissions } =
     exerciseIds.length > 0
-      ? supabase
+      ? await supabase
           .from("exercise_submissions")
           .select("id, exercise_id, sql, passed, created_at")
           .eq("user_id", user.id)
           .in("exercise_id", exerciseIds)
           .order("created_at", { ascending: false })
           .limit(100)
-      : Promise.resolve({ data: [] }),
-    assignmentIds.length > 0
-      ? supabase
-          .from("assignment_submissions")
-          .select("id, assignment_id, answers, correct, total, passed, created_at")
-          .eq("user_id", user.id)
-          .in("assignment_id", assignmentIds)
-          .order("created_at", { ascending: false })
-          .limit(100)
-      : Promise.resolve({ data: [] }),
-    Promise.all((assignments ?? []).map((a) => (a.file_path ? workbookLinks(a.file_path, a.title) : Promise.resolve(null)))),
-  ]);
+      : { data: [] };
 
   const next = outline.lessons.slice(index + 1).find((l) => l.state !== "locked") ?? null;
   const prev = outline.lessons.slice(0, index).reverse().find((l) => l.state !== "locked") ?? null;
   const href = (slug: string) => `/dars/${outline.course.slug}/${slug}`;
   const videoId = youtubeId(content?.youtube_url);
   const commentList = comments ?? [];
-  const practiceCount = (exercises?.length ?? 0) + (assignments?.length ?? 0);
+  const practiceCount = (exercises?.length ?? 0) + excel.assignments.length;
 
   const description = (
     <div className="space-y-8">
@@ -183,37 +122,7 @@ export default async function LessonPage({ params }: { params: Params }) {
         </section>
       ) : null}
 
-      {resources && resources.length > 0 ? (
-        <section aria-labelledby="resources">
-          <h2 id="resources" className="flex items-center gap-2 text-lg font-bold">
-            <Paperclip className="size-5 text-accent-text" aria-hidden="true" />
-            {uz.resources.title}
-          </h2>
-          <ul className="card mt-3 divide-y divide-border">
-            {resources.map((r, i) => {
-              const href = r.url ?? resourceUrls[i];
-              if (!href) return null;
-              return (
-                <li key={r.id}>
-                  <a
-                    href={href}
-                    {...(r.url ? { target: "_blank", rel: "noopener noreferrer" } : { download: true })}
-                    className="flex min-h-12 items-center gap-3 px-4 py-2 hover:bg-surface-muted"
-                  >
-                    {r.url ? (
-                      <ExternalLink className="size-4 shrink-0 text-accent-text" aria-hidden="true" />
-                    ) : (
-                      <Download className="size-4 shrink-0 text-accent-text" aria-hidden="true" />
-                    )}
-                    <span className="min-w-0 flex-1 font-semibold">{r.title}</span>
-                    <span className="shrink-0 text-xs text-muted">{r.url ? uz.resources.open : formatSize(r.size_bytes) || uz.resources.download}</span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ) : null}
+      <MaterialsList {...materials} />
 
       {content?.task_md ? (
         <section className="rounded-xl border-l-4 border-accent bg-surface p-5 shadow-sm sm:p-6" aria-labelledby="task">
@@ -229,47 +138,7 @@ export default async function LessonPage({ params }: { params: Params }) {
 
   const practice = (
     <div className="space-y-10">
-      {assignments && assignments.length > 0 ? (
-        <section aria-labelledby="excel-tasks" className="space-y-4">
-          <h2 id="excel-tasks" className="flex items-center gap-2 text-xl font-bold">
-            <FileSpreadsheet className="size-5 text-accent-text" aria-hidden="true" />
-            {uz.assignment.title}
-          </h2>
-          {assignments.map((a, i) => {
-            const link = links[i];
-            const embedSrc = a.embed_url ?? (link?.view ? officeViewerUrl(link.view) : null);
-            const openHref = a.embed_url ?? (link?.view ? officeViewerUrl(link.view).replace("/op/embed.aspx", "/op/view.aspx") : null);
-            return (
-              <AssignmentPanel
-                key={a.id}
-                assignmentId={a.id}
-                number={i + 1}
-                title={a.title}
-                points={a.points}
-                instructions={a.instructions_md ? <Markdown>{a.instructions_md}</Markdown> : null}
-                embedSrc={embedSrc}
-                openHref={openHref}
-                downloadHref={a.allow_download ? (link?.download ?? null) : null}
-                questions={[...a.assignment_questions]
-                  .sort((x, y) => x.position - y.position)
-                  .map((q) => ({ id: q.id, prompt: q.prompt, answer_type: q.answer_type, placeholder: q.placeholder }))}
-                attempts={(assignmentSubs ?? [])
-                  .filter((s) => s.assignment_id === a.id)
-                  .map(
-                    (s): AssignmentAttempt => ({
-                      id: s.id,
-                      correct: s.correct,
-                      total: s.total,
-                      passed: s.passed,
-                      created_at: s.created_at,
-                      answers: (s.answers ?? {}) as Record<string, string>,
-                    }),
-                  )}
-              />
-            );
-          })}
-        </section>
-      ) : null}
+      <AssignmentsList {...excel} />
 
       {exercises && exercises.length > 0 ? (
         <section aria-labelledby="sql-practice">

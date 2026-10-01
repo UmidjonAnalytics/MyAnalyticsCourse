@@ -89,7 +89,7 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
         <h2 id="lesson-resources" className="mb-3 text-lg font-bold">
           {uz.admin.resources.title}
         </h2>
-        <ResourceManager lessonId={lesson.id} resources={resources ?? []} />
+        <ResourceManager owner={{ lessonId: lesson.id }} resources={resources ?? []} />
       </section>
 
       <section className="card mt-6 p-5 sm:p-6" aria-labelledby="lesson-quiz">
@@ -105,7 +105,7 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
           <h2 id="lesson-assignments" className="text-lg font-bold">
             {uz.admin.assignments.inLesson}
           </h2>
-          <AddAssignmentButton lessonId={lesson.id} />
+          <AddAssignmentButton owner={{ lessonId: lesson.id }} />
         </div>
         {assignments?.length ? (
           <ul className="mt-3 divide-y divide-border">

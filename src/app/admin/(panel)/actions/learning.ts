@@ -79,7 +79,8 @@ export async function saveQuiz(input: z.input<typeof quizSchema>): Promise<Actio
 
 const resourceSchema = z
   .object({
-    lessonId: z.uuid(),
+    lessonId: z.uuid().optional(),
+    projectId: z.uuid().optional(),
     title: z.string().trim().min(1, uz.admin.resources.titleRequired).max(200),
     file_path: z
       .string()
@@ -88,24 +89,28 @@ const resourceSchema = z
     url: z.string().trim().max(2000).nullable(),
     size_bytes: z.number().int().min(0).max(60 * 1024 * 1024).nullable(),
   })
+  .refine((v) => Boolean(v.lessonId) !== Boolean(v.projectId), { message: e.invalid })
   .refine((v) => (v.file_path === null) !== (v.url === null), { message: e.invalid })
   .refine((v) => v.url === null || /^https:\/\/[^\s]+$/.test(v.url), { message: uz.admin.resources.linkError })
-  .refine((v) => v.file_path === null || v.file_path.startsWith(`${v.lessonId}/`), { message: e.invalid });
+  .refine((v) => v.file_path === null || v.file_path.startsWith(`${v.lessonId ?? v.projectId}/`), { message: e.invalid });
 
+/** Adds a material to a lesson or to a project (files live in the "lesson-resources" bucket). */
 export async function addResource(input: z.input<typeof resourceSchema>): Promise<ActionResult> {
   const ctx = await adminContext();
   if (!ctx) return forbidden;
   const parsed = resourceSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? e.invalid };
-  const { lessonId, ...values } = parsed.data;
-  const { count } = await ctx.supabase.from("lesson_resources").select("id", { count: "exact", head: true }).eq("lesson_id", lessonId);
+  const { lessonId, projectId, ...values } = parsed.data;
+  const owner = lessonId ? { lesson_id: lessonId } : { project_id: projectId! };
+  const [col, id] = lessonId ? (["lesson_id", lessonId] as const) : (["project_id", projectId!] as const);
+  const { count } = await ctx.supabase.from("lesson_resources").select("id", { count: "exact", head: true }).eq(col, id);
   const { data, error } = await ctx.supabase
     .from("lesson_resources")
-    .insert({ lesson_id: lessonId, ...values, position: (count ?? 0) + 1 })
+    .insert({ ...owner, ...values, position: (count ?? 0) + 1 })
     .select("id")
     .single();
   if (error) return { ok: false, error: dbErrorMessage(error) };
-  await audit(ctx.supabase, ctx.userId, "create", "resource", data.id, { lesson: lessonId, title: values.title });
+  await audit(ctx.supabase, ctx.userId, "create", "resource", data.id, { [col]: id, title: values.title });
   refresh();
   return { ok: true, id: data.id };
 }

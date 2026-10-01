@@ -10,7 +10,7 @@ export default async function Assignments() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("assignments")
-    .select("id, title, is_published, lessons(title, courses(title)), assignment_questions(count), assignment_submissions(count)")
+    .select("id, title, is_published, lessons(title, courses(title)), projects(title, courses(title)), assignment_questions(count), assignment_submissions(count)")
     .is("archived_at", null)
     .order("created_at", { ascending: false });
   const t = uz.admin.assignments;
@@ -26,7 +26,7 @@ export default async function Assignments() {
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{a.title}</span>
                 <span className="text-xs text-muted">
-                  {a.lessons?.courses?.title} · {a.lessons?.title}
+                  {a.lessons ? `${a.lessons.courses?.title} · ${a.lessons.title}` : `${a.projects?.courses?.title} · ${a.projects?.title}`}
                 </span>
               </span>
               <span className={`text-xs font-semibold ${a.is_published ? "text-accent-text" : "text-muted"}`}>

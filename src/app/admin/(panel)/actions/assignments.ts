@@ -12,18 +12,20 @@ const e = uz.admin.errors;
 const t = uz.admin.assignments;
 const refresh = () => revalidatePath("/", "layout");
 
-export async function createAssignment(lessonId: string): Promise<ActionResult> {
+/** New draft assignment on a lesson, or a checkpoint on a portfolio project. */
+export async function createAssignment(owner: { lessonId: string } | { projectId: string }): Promise<ActionResult> {
   const ctx = await adminContext();
   if (!ctx) return forbidden;
-  if (!z.uuid().safeParse(lessonId).success) return { ok: false, error: e.invalid };
-  const { count } = await ctx.supabase.from("assignments").select("id", { count: "exact", head: true }).eq("lesson_id", lessonId);
+  const [col, id] = "lessonId" in owner ? (["lesson_id", owner.lessonId] as const) : (["project_id", owner.projectId] as const);
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: e.invalid };
+  const { count } = await ctx.supabase.from("assignments").select("id", { count: "exact", head: true }).eq(col, id);
   const { data, error } = await ctx.supabase
     .from("assignments")
-    .insert({ lesson_id: lessonId, title: t.newTitle, position: (count ?? 0) + 1 })
+    .insert({ ...("lessonId" in owner ? { lesson_id: id } : { project_id: id }), title: t.newTitle, position: (count ?? 0) + 1 })
     .select("id")
     .single();
   if (error) return { ok: false, error: dbErrorMessage(error) };
-  await audit(ctx.supabase, ctx.userId, "create", "assignment", data.id, { lesson: lessonId });
+  await audit(ctx.supabase, ctx.userId, "create", "assignment", data.id, { [col]: id });
   refresh();
   return { ok: true, id: data.id };
 }

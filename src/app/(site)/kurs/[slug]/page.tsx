@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Award,
   BarChart3,
+  Briefcase,
   Check,
   CheckCircle2,
   Circle,
@@ -27,7 +28,9 @@ import { ReviewForm } from "@/components/course/ReviewForm";
 import { CourseCover } from "@/components/CourseCover";
 import { Markdown } from "@/components/Markdown";
 import { getCurrentUser } from "@/lib/auth/session";
+import { ProjectCardView } from "@/components/catalog/Cards";
 import { getBundlesForCourse, getCourseOutline, type OutlineLesson } from "@/lib/data/catalog";
+import { listProjects } from "@/lib/data/paths";
 import { formatDate, formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
 import { createClient } from "@/lib/supabase/server";
@@ -66,7 +69,7 @@ export default async function CoursePage({ params }: { params: Params }) {
 
   const { course, modules, hasAccess, owned, total, completed, percent, next } = outline;
   const supabase = await createClient();
-  const [bundles, { data: features }, { data: reviews }, { data: instructor }, { data: myReview }, { data: myCert }] = await Promise.all([
+  const [bundles, { data: features }, { data: reviews }, { data: instructor }, { data: myReview }, { data: myCert }, projects] = await Promise.all([
     getBundlesForCourse(supabase, course.id),
     supabase.rpc("course_lesson_features", { p_course_id: course.id }),
     supabase.rpc("course_reviews_public", { p_course_id: course.id }),
@@ -79,6 +82,7 @@ export default async function CoursePage({ params }: { params: Params }) {
     user
       ? supabase.from("certificates").select("code").eq("course_id", course.id).eq("user_id", user.id).is("revoked_at", null).maybeSingle()
       : Promise.resolve({ data: null }),
+    listProjects(supabase, course.id),
   ]);
 
   const lessonHref = (l: OutlineLesson) => `/dars/${course.slug}/${l.slug}`;
@@ -97,6 +101,7 @@ export default async function CoursePage({ params }: { params: Params }) {
     { Icon: Code2, text: p.incExercises(sum("exercises")), show: sum("exercises") > 0 },
     { Icon: ListChecks, text: p.incQuizzes(quizCount), show: quizCount > 0 },
     { Icon: Download, text: p.incResources(sum("resources")), show: sum("resources") > 0 },
+    { Icon: Briefcase, text: uz.paths.projects(projects.length), show: projects.length > 0 },
     { Icon: Award, text: p.incCertificate, show: true },
     { Icon: InfinityIcon, text: p.incLifetime, show: true },
   ].filter((x) => x.show);
@@ -237,6 +242,19 @@ export default async function CoursePage({ params }: { params: Params }) {
               })}
             </div>
           </section>
+
+          {projects.length > 0 ? (
+            <section aria-labelledby="course-projects">
+              <h2 id="course-projects" className="text-xl font-bold">
+                {uz.projects.inCourse}
+              </h2>
+              <ul className="mt-4 grid gap-5 sm:grid-cols-2">
+                {projects.map((pr) => (
+                  <ProjectCardView key={pr.id} p={pr} />
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {course.audience.length > 0 || course.requirements.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2">
