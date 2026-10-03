@@ -138,7 +138,12 @@ export default async function CertificatePage({ params }: { params: Params }) {
           </div>
         </article>
 
-        <p className="mt-6 text-center text-sm text-muted print:hidden">
+        <p className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-center text-sm text-muted print:hidden">
+          {cert.owner_username ? (
+            <Link href={`/u/${cert.owner_username}`} className="font-semibold text-accent-text hover:underline">
+              {uz.publicProfile.ownerProfile}: {cert.full_name}
+            </Link>
+          ) : null}
           <Link href={`/kurs/${cert.course_slug}`} className="font-semibold text-accent-text hover:underline">
             {cert.course_title}
           </Link>

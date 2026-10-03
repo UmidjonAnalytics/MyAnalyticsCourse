@@ -48,12 +48,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 7. `supabase/migrations/0007_discussions_assignments.sql` (lesson length, discussions, Excel assignments)
 8. `supabase/migrations/0008_quizzes_resources_certificates.sql` (quizzes, lesson materials, certificates, instructors, reviews)
 9. `supabase/migrations/0009_paths_projects.sql` (learning paths, portfolio projects)
-10. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+10. `supabase/migrations/0010_public_profiles.sql` (opt-in public student profiles)
+11. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0009 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0010 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -414,6 +415,16 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
   - Approved work whose author allowed it appears under "Talabalar ishlari" (name shown as "Ism F.").
 - Both appear on the home page, in the top menu, and projects on their course page.
 
+## Public student profile (portfolio)
+
+- Students turn it on in **Profil → "Ommaviy profil (portfolio)"**: username, short headline, city,
+  about, LinkedIn / GitHub / website links. It is **off by default**.
+- The page `/u/<username>` shows their certificates, approved public projects and skills (from the
+  projects). It never shows phone number or email; the database function `public_profile` returns
+  only these fields and only for profiles that are public.
+- Certificate pages link to the owner's profile, and project showcases link authors' names, when
+  the profile is public. Turning it off makes the page "not found" right away.
+
 ## Payments (Payme, Click, Paynet)
 
 How it works:
@@ -484,3 +495,4 @@ guessed.
   richer course page (outcomes, audience, requirements, level, instructor, "includes"), reviews.
 - Paths + projects (done): learning paths with progress, portfolio projects with checkpoints,
   instructor review and a public showcase.
+- Public profiles (done): opt-in portfolio page with certificates, projects and links.

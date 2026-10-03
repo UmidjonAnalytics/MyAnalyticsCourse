@@ -196,7 +196,13 @@ export default async function ProjectPage({ params }: { params: Params }) {
                   <li key={s.id} className="card flex flex-col p-4">
                     <div className="flex items-center gap-2.5">
                       <Avatar name={s.author} size={32} />
-                      <span className="font-semibold">{s.author}</span>
+                      {s.username ? (
+                        <Link href={`/u/${s.username}`} className="font-semibold hover:underline">
+                          {s.author}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold">{s.author}</span>
+                      )}
                     </div>
                     {s.summary ? <p className="mt-3 line-clamp-4 flex-1 whitespace-pre-wrap text-sm">{s.summary}</p> : <span className="flex-1" />}
                     <a href={s.link_url} target="_blank" rel="noopener noreferrer nofollow ugc" className="btn-secondary mt-3 min-h-10 self-start text-sm">

@@ -37,9 +37,41 @@ export type Profile = {
   email: string | null;
   avatar_url: string | null;
   role: Role;
+  username: string | null;
+  headline: string;
+  bio: string;
+  location: string;
+  linkedin_url: string | null;
+  github_url: string | null;
+  website_url: string | null;
+  is_public: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
   last_seen_at: Timestamp | null;
+};
+
+/** Shape returned by the public_profile() function. */
+export type PublicProfile = {
+  username: string;
+  full_name: string;
+  avatar_url: string | null;
+  headline: string;
+  bio: string;
+  location: string;
+  linkedin_url: string | null;
+  github_url: string | null;
+  website_url: string | null;
+  member_since: Timestamp;
+  certificates: { code: string; course_title: string; hours: number; issued_at: Timestamp }[];
+  projects: {
+    title: string;
+    slug: string;
+    course_title: string;
+    skills: string[];
+    link_url: string;
+    summary: string;
+    reviewed_at: Timestamp | null;
+  }[];
 };
 
 export type DeviceSession = {
@@ -672,8 +704,9 @@ export type Database = {
       can_view_project: { Args: { p_project_id: string }; Returns: boolean };
       project_showcase: {
         Args: { p_project_id: string };
-        Returns: Array<{ id: string; link_url: string; summary: string; reviewed_at: Timestamp | null; author: string }>;
+        Returns: Array<{ id: string; link_url: string; summary: string; reviewed_at: Timestamp | null; author: string; username: string | null }>;
       };
+      public_profile: { Args: { p_username: string }; Returns: Json | null };
       certificate_public: {
         Args: { p_code: string };
         Returns: Array<{
@@ -685,6 +718,7 @@ export type Database = {
           issued_at: Timestamp;
           instructor_name: string | null;
           instructor_title: string | null;
+          owner_username: string | null;
         }>;
       };
       register_device_session: { Args: { p_device_id: string; p_user_agent: string }; Returns: undefined };
