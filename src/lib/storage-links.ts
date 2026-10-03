@@ -5,11 +5,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const HOURS_3 = 60 * 60 * 3;
 
-/** File name for downloads. Apostrophes (o', g') are dropped: storage double-encodes them. */
+/**
+ * File name for downloads: letters, digits, spaces, "-", "_" and "." only. Apostrophes (o', g')
+ * are dropped and brackets/dashes become spaces, because storage percent-encodes them in the name.
+ */
 export function downloadName(title: string) {
   return title
     .replace(/['‘’ʻʼ`]/g, "")
-    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/[^\p{L}\p{N} ._-]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 80);

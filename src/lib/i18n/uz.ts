@@ -1161,6 +1161,13 @@ export const uz = {
       empty: "Hali dataset yo'q.",
       delete: "O'chirish",
       deleteConfirm: "Dataset va fayli o'chirilsinmi?",
+      samplesTitle: "Namuna kontent",
+      samplesLead:
+        "5 ta o'zbekcha namuna dataset (chakana savdo, bank, mobil operator, onlayn do'kon, HR) — sintetik ma'lumotlar, ustunlar tavsifi va savollar bilan — darhol e'lon qilinadi. Yana keyingi oy uchun bitta challenge qoralamasi (e'lon qilinmaydi). Mavjudlari qayta qo'shilmaydi.",
+      samplesButton: "Namuna kontent qo'shish",
+      samplesWorking: "Tayyorlanmoqda... (bir daqiqagacha)",
+      samplesDone: (d: number, c: number) => `Qo'shildi: ${d} ta dataset${c ? ", 1 ta challenge qoralamasi" : ""}.`,
+      samplesNothing: "Namuna kontent allaqachon qo'shilgan.",
     },
     challenges: {
       title: "Oylik challenge",

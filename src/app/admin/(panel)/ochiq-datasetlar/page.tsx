@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Database, Plus } from "lucide-react";
+import { SampleContentButton } from "@/components/admin/SampleContentButton";
 import { uz } from "@/lib/i18n/uz";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,6 +27,7 @@ export default async function AdminOpenData() {
           {t.add}
         </Link>
       </div>
+      <SampleContentButton />
       <ul className="card mt-6 divide-y divide-border">
         {(data ?? []).map((d) => (
           <li key={d.id}>
