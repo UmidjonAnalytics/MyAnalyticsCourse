@@ -240,6 +240,21 @@ export type ProjectSubmission = {
   reviewed_at: Timestamp | null;
 };
 
+export type SiteSettings = {
+  id: number;
+  company_name: string;
+  stir: string;
+  address: string;
+  phone: string;
+  email: string;
+  telegram_url: string;
+  instagram_url: string;
+  support_hours: string;
+  updated_at: Timestamp;
+};
+
+export type SitePage = { slug: string; title: string; body_md: string; updated_at: Timestamp };
+
 export type Module = {
   id: string;
   course_id: string;
@@ -526,6 +541,8 @@ export type Database = {
         [Rel<"courses_category_id_fkey", "category_id", "categories">, Rel<"courses_instructor_id_fkey", "instructor_id", "instructors">]
       >;
       instructors: Table<Instructor, "name">;
+      site_settings: Table<SiteSettings, never>;
+      site_pages: Table<SitePage, "slug" | "title">;
       quiz_questions: Table<QuizQuestion, "lesson_id" | "prompt" | "options", [Rel<"quiz_questions_lesson_id_fkey", "lesson_id", "lessons">]>;
       quiz_answer_keys: Table<
         QuizAnswerKey,

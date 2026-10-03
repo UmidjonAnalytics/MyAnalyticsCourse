@@ -7,9 +7,14 @@ const bricolage = Bricolage_Grotesque({ subsets: ["latin", "latin-ext"], variabl
 const manrope = Manrope({ subsets: ["latin", "latin-ext"], variable: "--font-manrope", display: "swap" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-jetbrains", display: "swap" });
 
+const siteUrl = process.env.PUBLIC_SITE_URL?.trim();
+
 export const metadata: Metadata = {
   title: { default: uz.brand.name, template: `%s | ${uz.brand.name}` },
   description: uz.brand.tagline,
+  // Absolute links for share previews (Telegram, LinkedIn).
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
+  openGraph: { siteName: uz.brand.name, locale: "uz_UZ", type: "website" },
 };
 
 export const viewport: Viewport = {

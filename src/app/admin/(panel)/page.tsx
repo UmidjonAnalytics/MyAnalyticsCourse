@@ -1,5 +1,7 @@
 import { BookOpen, CreditCard, TrendingUp, UserCheck, Users } from "lucide-react";
+import Link from "next/link";
 import { Notice } from "@/components/Notice";
+import { launchChecks } from "@/lib/admin/readiness";
 import { formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
 import { createClient } from "@/lib/supabase/server";
@@ -16,10 +18,13 @@ type Stats = {
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
-  const [{ data, error }, courses] = await Promise.all([
+  const [{ data, error }, courses, checks] = await Promise.all([
     supabase.rpc("admin_dashboard_stats"),
     supabase.from("courses").select("id", { count: "exact", head: true }).is("archived_at", null),
+    launchChecks(supabase),
   ]);
+  const warnings = checks.filter((c) => c.status === "warn");
+  const done = checks.filter((c) => c.status === "ok").length;
   const t = uz.admin.dashboard;
   const s = data as Stats | null;
 
@@ -49,6 +54,20 @@ export default async function AdminDashboard() {
     <div className="max-w-6xl">
       <h1 className="text-2xl font-bold">{t.title}</h1>
       <p className="mt-1 text-muted">{t.lead}</p>
+      {warnings.length > 0 || done < checks.length ? (
+        <div className="mt-6">
+          <Notice tone={warnings.length > 0 ? "error" : "info"}>
+            {warnings.map((w) => (
+              <span key={w.id} className="mb-1 block">
+                <strong>{uz.admin.readiness.items[w.id]?.title}.</strong> {uz.admin.readiness.items[w.id]?.help}
+              </span>
+            ))}
+            <Link href="/tayyorlik" className="font-semibold underline">
+              {uz.admin.readiness.title} — {uz.admin.readiness.done(done, checks.length)}
+            </Link>
+          </Notice>
+        </div>
+      ) : null}
       <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map(({ label, value, Icon }) => (
           <li key={label} className="card p-5">

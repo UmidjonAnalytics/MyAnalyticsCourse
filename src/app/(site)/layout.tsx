@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { TopBar } from "@/components/TopBar";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -20,9 +21,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <main id="main" className="flex-1">
         {children}
       </main>
-      <footer className="border-t border-border py-6 text-center text-sm text-muted">
-        © {new Date().getFullYear()} {uz.brand.name}
-      </footer>
+      {admin ? null : <SiteFooter />}
     </div>
   );
 }

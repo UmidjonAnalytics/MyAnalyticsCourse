@@ -18,6 +18,8 @@ import {
   MessageSquare,
   Package,
   Receipt,
+  Rocket,
+  Settings,
   Route,
   Star,
   Tag,
@@ -28,6 +30,7 @@ import { uz } from "@/lib/i18n/uz";
 // Links are written WITHOUT the /admin prefix: on admin.<domain> the proxy adds it.
 const items = [
   { href: "/", label: uz.admin.nav.dashboard, Icon: LayoutDashboard, ready: true },
+  { href: "/tayyorlik", label: uz.admin.nav.readiness, Icon: Rocket, ready: true },
   { href: "/kurslar", label: uz.admin.nav.courses, Icon: BookOpen, ready: true },
   { href: "/darslar", label: uz.admin.nav.modules, Icon: ListTree, ready: true },
   { href: "/kategoriyalar", label: uz.admin.nav.categories, Icon: FolderTree, ready: true },
@@ -45,6 +48,7 @@ const items = [
   { href: "/sertifikatlar", label: uz.admin.nav.certificates, Icon: Award, ready: true },
   { href: "/oqituvchilar", label: uz.admin.nav.instructors, Icon: GraduationCap, ready: true },
   { href: "/arxiv", label: uz.admin.nav.archive, Icon: Archive, ready: true },
+  { href: "/sozlamalar", label: uz.admin.nav.settings, Icon: Settings, ready: true },
   { href: "/jurnal", label: uz.admin.nav.audit, Icon: History, ready: true },
 ];
 

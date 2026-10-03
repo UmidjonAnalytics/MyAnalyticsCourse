@@ -1,7 +1,9 @@
 // All user-facing text (Uzbek, Latin script). Edit wording here; the code only uses these keys.
 // Texts that need a value inside (a number, a name) are small functions.
 
-const BRAND_NAME = "[PLATFORMA NOMI]";
+// Platform name: set NEXT_PUBLIC_BRAND_NAME in the hosting settings (then redeploy).
+export const BRAND_PLACEHOLDER = "[PLATFORMA NOMI]";
+const BRAND_NAME = process.env.NEXT_PUBLIC_BRAND_NAME?.trim() || BRAND_PLACEHOLDER;
 
 export const uz = {
   brand: {
@@ -422,6 +424,26 @@ export const uz = {
     ownerProfile: "Egasining profili",
   },
 
+  legal: {
+    oferta: "Ommaviy oferta",
+    privacy: "Maxfiylik siyosati",
+    refunds: "Qaytarish siyosati",
+    contacts: "Aloqa",
+    updated: (d: string) => `Oxirgi tahrir: ${d}`,
+    contactsTitle: "Biz bilan bog'lanish",
+    contactsLead: "Savollar, to'lov yoki texnik muammolar bo'yicha yozing — tez javob beramiz.",
+    phone: "Telefon",
+    email: "E-mail",
+    telegram: "Telegram",
+    instagram: "Instagram",
+    hours: "Ish vaqti",
+    company: "Rekvizitlar",
+    stir: "STIR",
+    address: "Manzil",
+    footerRights: "Barcha huquqlar himoyalangan.",
+    checkoutConsent: "To'lov qilish orqali siz ommaviy oferta va maxfiylik siyosati shartlariga rozilik bildirasiz.",
+  },
+
   quiz: {
     tab: "Test",
     title: "Bilimingizni tekshiring",
@@ -716,6 +738,8 @@ export const uz = {
       instructors: "O'qituvchilar",
       paths: "O'quv yo'llari",
       projects: "Portfolio loyihalar",
+      settings: "Sayt sozlamalari",
+      readiness: "Ishga tushirish",
     },
     common: {
       create: "Yaratish",
@@ -1041,6 +1065,61 @@ export const uz = {
       empty: "Hali Excel topshiriq yo'q.",
       emptyAll: "Hali Excel topshiriq yo'q. Dars sahifasida \"Excel topshiriq qo'shish\" tugmasini bosing.",
       questionCount: (n: number) => `${n} ta savol`,
+    },
+    settings: {
+      title: "Sayt sozlamalari",
+      lead: "Aloqa ma'lumotlari va rekvizitlar sayt pastida, aloqa sahifasida va oferta matnida ko'rinadi.",
+      company: "Kompaniya nomi (MChJ / YaTT)",
+      stir: "STIR (INN)",
+      address: "Yuridik manzil",
+      phone: "Telefon",
+      email: "E-mail",
+      telegram: "Telegram havolasi",
+      instagram: "Instagram havolasi",
+      hours: "Ish vaqti (masalan: Du–Sha, 9:00–18:00)",
+      save: "Saqlash",
+      saved: "Saqlandi",
+      pages: "Huquqiy sahifalar",
+      pagesLead:
+        "Matnlar namuna sifatida tayyorlangan. Ishga tushirishdan oldin yurist bilan tekshiring. {{kompaniya}}, {{stir}}, {{manzil}}, {{telefon}}, {{email}}, {{sayt}}, {{brend}} o'rniga yuqoridagi ma'lumotlar avtomatik qo'yiladi.",
+      pageTitle: "Sarlavha",
+      pageBody: "Matn (Markdown)",
+      savePage: "Sahifani saqlash",
+      open: "Saytda ochish",
+      invalid: "Ma'lumotlarni tekshiring (havolalar https:// bilan boshlansin).",
+    },
+    readiness: {
+      title: "Ishga tushirishga tayyorlik",
+      lead: "Platformani sotuvga ochishdan oldin nimalar qilinishi kerak. Holat avtomatik tekshiriladi.",
+      done: (d: number, t: number) => `${t} tadan ${d} tasi tayyor`,
+      ok: "Tayyor",
+      todo: "Qilish kerak",
+      warn: "Diqqat: hali yoqilgan",
+      manual: "Qo'lda tekshiring",
+      items: {
+        brandName: { title: "Platforma nomi", help: "Vercel → Settings → Environment Variables: NEXT_PUBLIC_BRAND_NAME = nom, keyin Redeploy." },
+        domain: { title: "O'z domeningiz", help: "Domen sotib oling (masalan, .uz), Vercel → Settings → Domains ga example.uz va admin.example.uz ni qo'shing, PUBLIC_SITE_URL ni yangilang." },
+        company: { title: "Rekvizitlar va aloqa", help: "Admin → Sayt sozlamalari: kompaniya nomi, STIR, telefon, e-mail." },
+        lawyer: { title: "Oferta, maxfiylik va qaytarish matnlari", help: "Namuna matnlarni yurist bilan tekshiring va Sayt sozlamalarida tahrirlang." },
+        devLogin: { title: "Test kirish kodi (DEV_LOGIN_CODE)", help: "Vercel'dan DEV_LOGIN_CODE ni o'chiring. Hozir istalgan telefon 123456 bilan kira oladi!" },
+        sms: { title: "Haqiqiy SMS (Eskiz)", help: "Eskiz shartnomasi, keyin SMS_PROVIDER=eskiz, ESKIZ_EMAIL, ESKIZ_PASSWORD, SEND_SMS_HOOK_SECRET (README 3c–4)." },
+        smsHook: { title: "Supabase: telefon orqali kirish va SMS hook", help: "Supabase → Authentication → Phone yoqilgan va Send SMS hook ulangan bo'lsin (README 3b–3c)." },
+        testPayments: { title: "Sinov to'lovi (ENABLE_TEST_PAYMENTS)", help: "Vercel'dan ENABLE_TEST_PAYMENTS ni o'chiring. Hozir \"Sinov to'lovi\" bilan bepul kirish mumkin!" },
+        payme: { title: "Payme (haqiqiy kassa)", help: "Payme Business'dan kassa: PAYME_MERCHANT_ID, PAYME_KEY; PAYME_TEST=false (hozir test rejimida bo'lsa ham shu yerda ko'rinadi). Callback: /api/payments/payme." },
+        click: { title: "Click", help: "Click kabinetidan CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY. Prepare/Complete: /api/payments/click/prepare va /complete." },
+        paynet: { title: "Paynet", help: "Paynet merchant hujjatlarini yuboring — protokol taxmin qilinmaydi." },
+        courses: { title: "Kamida bitta e'lon qilingan kurs (darslari bilan)", help: "Admin → Kurslar." },
+        coursePages: { title: "Kurs sahifalari to'liq", help: "Har bir kursda o'qituvchi va \"Nimani o'rganasiz\" ro'yxati bo'lsin." },
+        vercelPro: { title: "Tijoriy hosting", help: "Vercel Hobby faqat notijorat uchun. Sotuvdan oldin Vercel Pro ($20/oy) yoki o'z serveringiz (Docker)." },
+      } as Record<string, { title: string; help: string }>,
+      groups: {
+        brand: "Brend va domen",
+        legal: "Huquqiy talablar",
+        auth: "Kirish (SMS)",
+        payments: "To'lovlar",
+        content: "Kontent",
+        hosting: "Hosting",
+      } as Record<string, string>,
     },
     paths: {
       title: "O'quv yo'llari",

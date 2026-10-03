@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldCheck, Tag, X } from "lucide-react";
 import { getQuote, startCheckout } from "@/app/(site)/tolov/actions";
@@ -209,6 +210,20 @@ export function CheckoutForm({
             {pending ? t.paying : t.pay(formatSom(q.finalAmount))}
           </button>
           <p className="mt-3 text-xs text-muted">{t.secure}</p>
+          <p className="mt-2 text-xs text-muted">
+            {uz.legal.checkoutConsent}{" "}
+            <Link href="/oferta" target="_blank" className="font-semibold underline">
+              {uz.legal.oferta}
+            </Link>
+            {" · "}
+            <Link href="/maxfiylik" target="_blank" className="font-semibold underline">
+              {uz.legal.privacy}
+            </Link>
+            {" · "}
+            <Link href="/qaytarish" target="_blank" className="font-semibold underline">
+              {uz.legal.refunds}
+            </Link>
+          </p>
         </section>
       )}
     </div>

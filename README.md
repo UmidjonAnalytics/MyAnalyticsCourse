@@ -49,12 +49,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 8. `supabase/migrations/0008_quizzes_resources_certificates.sql` (quizzes, lesson materials, certificates, instructors, reviews)
 9. `supabase/migrations/0009_paths_projects.sql` (learning paths, portfolio projects)
 10. `supabase/migrations/0010_public_profiles.sql` (opt-in public student profiles)
-11. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+11. `supabase/migrations/0011_site_settings_legal.sql` (contacts, legal details, oferta/privacy/refund pages)
+12. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0010 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0011 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -277,6 +278,7 @@ Other commands: `npm run build` (checks everything compiles), `npm run lint`, `n
 
 | Variable | Needed | What it is |
 | --- | --- | --- |
+| `NEXT_PUBLIC_BRAND_NAME` | at launch | Platform name everywhere (header, certificates, SMS). Redeploy after changing |
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Publishable (anon) key, safe in the browser |
 | `SUPABASE_SECRET_KEY` | yes | Secret (service role) key, server only |
@@ -425,6 +427,23 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - Certificate pages link to the owner's profile, and project showcases link authors' names, when
   the profile is public. Turning it off makes the page "not found" right away.
 
+## Launch checklist
+
+Admin → **"Ishga tushirish"** checks everything automatically (env settings, contacts, content) and
+says what is left. The dashboard shows a red warning while test login or test payments are on.
+
+- **Name**: set `NEXT_PUBLIC_BRAND_NAME` in Vercel, then Redeploy.
+- **Contacts + legal details**: admin → **"Sayt sozlamalari"** (company, STIR, address, phone, e-mail,
+  Telegram, hours). They appear in the footer, on `/aloqa` and inside the legal texts.
+- **Legal pages**: `/oferta`, `/maxfiylik`, `/qaytarish` — Uzbek draft texts, editable in "Sayt
+  sozlamalari". Placeholders like `{{kompaniya}}` are filled from the contacts. **Have a lawyer check
+  them.** Payme/Click ask for these pages and the contacts when approving a merchant. The checkout
+  shows a consent line with links to all three.
+- **Domain**: add `example.uz` and `admin.example.uz` in Vercel → Domains, set `PUBLIC_SITE_URL`
+  (also used for the sitemap at `/sitemap.xml` and share previews), and update Supabase → Auth → URL
+  configuration.
+- **Turn off test mode**: remove `DEV_LOGIN_CODE` and `ENABLE_TEST_PAYMENTS` once real SMS and payments work.
+
 ## Payments (Payme, Click, Paynet)
 
 How it works:
@@ -496,3 +515,5 @@ guessed.
 - Paths + projects (done): learning paths with progress, portfolio projects with checkpoints,
   instructor review and a public showcase.
 - Public profiles (done): opt-in portfolio page with certificates, projects and links.
+- Launch preparation (in progress): launch checklist, contacts + legal pages, footer, checkout consent,
+  sitemap, brand name setting. Waiting for: name, domain, Eskiz, Payme/Click keys, Paynet documents.
