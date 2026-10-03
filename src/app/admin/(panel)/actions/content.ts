@@ -600,3 +600,199 @@ export async function reviewSubmission(input: z.input<typeof reviewSchema>): Pro
   refresh();
   return { ok: true, message: uz.admin.projects.reviewSaved };
 }
+
+// ------------------------------------------------------------------ free data library
+
+const openDatasetSchema = z.object({
+  id: z.uuid().optional(),
+  title,
+  slug,
+  short_description: z.string().trim().max(300).default(""),
+  description_md: md,
+  industry: z.string().trim().max(80).default(""),
+  tags: lines,
+  is_published: checkbox,
+  file_path: z
+    .string()
+    .default("")
+    .transform((v) => v || null)
+    .pipe(z.string().regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}(\.[a-z0-9]{1,8})?$/).nullable()),
+  file_name: z.string().trim().max(200).default(""),
+  size_bytes: z
+    .string()
+    .default("")
+    .transform((v) => (v ? Number(v) : null))
+    .pipe(z.number().int().min(0).max(200 * 1024 * 1024).nullable()),
+  row_count: z
+    .string()
+    .default("")
+    .transform((v) => (v.replace(/\s/g, "") ? Number(v.replace(/\s/g, "")) : null))
+    .pipe(z.number().int().min(0).max(1_000_000_000).nullable()),
+  // "name — description" per line
+  columns: z
+    .string()
+    .default("")
+    .transform((v) =>
+      v
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .slice(0, 200)
+        .map((l) => {
+          const [name, ...rest] = l.split(/\s+[—–-]\s+/);
+          return { name: (name ?? "").slice(0, 120), description: rest.join(" — ").slice(0, 300) };
+        })
+        .filter((c) => c.name),
+    ),
+  preview: z
+    .string()
+    .default("[]")
+    .transform((v, ctx) => {
+      try {
+        const rows = JSON.parse(v) as unknown;
+        if (!Array.isArray(rows)) throw new Error();
+        return rows.slice(0, 10).map((r) => (Array.isArray(r) ? r.slice(0, 200).map((x) => (x === null ? null : String(x).slice(0, 200))) : []));
+      } catch {
+        ctx.addIssue({ code: "custom", message: e.invalid });
+        return z.NEVER;
+      }
+    }),
+});
+
+export async function saveOpenDataset(_prev: FormState, form: FormData): Promise<FormState> {
+  const ctx = await adminContext();
+  if (!ctx) return { status: "error", error: e.forbidden };
+  const keys = ["title", "slug", "short_description", "description_md", "industry", "tags", "file_path", "file_name", "size_bytes", "row_count", "columns", "preview"] as const;
+  const parsed = openDatasetSchema.safeParse({
+    id: fd(form, "id") || undefined,
+    is_published: form.get("is_published"),
+    ...Object.fromEntries(keys.map((k) => [k, fd(form, k)])),
+  });
+  if (!parsed.success) return { status: "error", error: firstError(parsed.error) };
+  const { id, ...values } = parsed.data;
+
+  if (id) {
+    const { data: before } = await ctx.supabase.from("open_datasets").select("file_path").eq("id", id).maybeSingle();
+    const { error } = await ctx.supabase.from("open_datasets").update(values).eq("id", id);
+    if (error) return { status: "error", error: dbErrorMessage(error) };
+    if (before?.file_path && before.file_path !== values.file_path) await ctx.supabase.storage.from("open-data").remove([before.file_path]);
+    await audit(ctx.supabase, ctx.userId, "update", "open_dataset", id, { title: values.title });
+    refresh();
+    return { status: "saved" };
+  }
+  const { count } = await ctx.supabase.from("open_datasets").select("id", { count: "exact", head: true });
+  const { data, error } = await ctx.supabase
+    .from("open_datasets")
+    .insert({ ...values, position: (count ?? 0) + 1 })
+    .select("id")
+    .single();
+  if (error) return { status: "error", error: dbErrorMessage(error) };
+  await audit(ctx.supabase, ctx.userId, "create", "open_dataset", data.id, { title: values.title });
+  refresh();
+  redirect(`/ochiq-datasetlar/${data.id}`);
+}
+
+export async function deleteOpenDataset(id: string): Promise<ActionResult> {
+  const ctx = await adminContext();
+  if (!ctx) return forbidden;
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: e.invalid };
+  const { data: row } = await ctx.supabase.from("open_datasets").select("file_path").eq("id", id).maybeSingle();
+  const { error } = await ctx.supabase.from("open_datasets").delete().eq("id", id);
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  if (row?.file_path) await ctx.supabase.storage.from("open-data").remove([row.file_path]);
+  await audit(ctx.supabase, ctx.userId, "delete", "open_dataset", id);
+  refresh();
+  redirect("/ochiq-datasetlar");
+}
+
+// ------------------------------------------------------------------ monthly challenges
+
+/** "2026-11-01T09:00" from <input type="datetime-local"> is Tashkent time (UTC+5). */
+const tashkentTime = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, e.invalid)
+  .transform((v) => new Date(`${v}:00+05:00`).toISOString());
+
+const challengeSchema = z
+  .object({
+    id: z.uuid().optional(),
+    title,
+    slug,
+    short_description: z.string().trim().max(300).default(""),
+    brief_md: md,
+    rules_md: md,
+    prize: z.string().trim().max(200).default(""),
+    dataset_id: z
+      .string()
+      .default("")
+      .transform((v) => v || null)
+      .pipe(z.uuid().nullable()),
+    cover_url: optionalUrl,
+    starts_at: tashkentTime,
+    ends_at: tashkentTime,
+    is_published: checkbox,
+  })
+  .refine((v) => v.ends_at > v.starts_at, { message: uz.admin.challenges.datesInvalid });
+
+export async function saveChallenge(_prev: FormState, form: FormData): Promise<FormState> {
+  const ctx = await adminContext();
+  if (!ctx) return { status: "error", error: e.forbidden };
+  const keys = ["title", "slug", "short_description", "brief_md", "rules_md", "prize", "dataset_id", "starts_at", "ends_at"] as const;
+  const parsed = challengeSchema.safeParse({
+    id: fd(form, "id") || undefined,
+    cover_url: fd(form, "cover_url") ?? "",
+    is_published: form.get("is_published"),
+    ...Object.fromEntries(keys.map((k) => [k, fd(form, k)])),
+  });
+  if (!parsed.success) return { status: "error", error: firstError(parsed.error) };
+  const { id, ...values } = parsed.data;
+  if (id) {
+    const { error } = await ctx.supabase.from("challenges").update(values).eq("id", id);
+    if (error) return { status: "error", error: dbErrorMessage(error) };
+    await audit(ctx.supabase, ctx.userId, "update", "challenge", id, { title: values.title });
+    refresh();
+    return { status: "saved" };
+  }
+  const { data, error } = await ctx.supabase.from("challenges").insert(values).select("id").single();
+  if (error) return { status: "error", error: dbErrorMessage(error) };
+  await audit(ctx.supabase, ctx.userId, "create", "challenge", data.id, { title: values.title });
+  refresh();
+  redirect(`/challengelar/${data.id}`);
+}
+
+export async function deleteChallenge(id: string): Promise<ActionResult> {
+  const ctx = await adminContext();
+  if (!ctx) return forbidden;
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: e.invalid };
+  const { data: entries } = await ctx.supabase.from("challenge_entries").select("image_path").eq("challenge_id", id).not("image_path", "is", null);
+  const { error } = await ctx.supabase.from("challenges").delete().eq("id", id);
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  const images = (entries ?? []).map((x) => x.image_path).filter((p): p is string => Boolean(p));
+  if (images.length) await ctx.supabase.storage.from("challenge-images").remove(images);
+  await audit(ctx.supabase, ctx.userId, "delete", "challenge", id);
+  refresh();
+  redirect("/challengelar");
+}
+
+const entrySchema = z.object({
+  id: z.uuid(),
+  place: z.number().int().min(1).max(3).nullable().optional(),
+  hidden: z.boolean().optional(),
+});
+
+/** Winner places (1–3) and moderation for challenge entries. */
+export async function updateChallengeEntry(input: z.input<typeof entrySchema>): Promise<ActionResult> {
+  const ctx = await adminContext();
+  if (!ctx) return forbidden;
+  const parsed = entrySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: e.invalid };
+  const { id, place, hidden } = parsed.data;
+  const patch: { place?: number | null; hidden_at?: string | null } = {};
+  if (place !== undefined) patch.place = place;
+  if (hidden !== undefined) patch.hidden_at = hidden ? new Date().toISOString() : null;
+  const { error } = await ctx.supabase.from("challenge_entries").update(patch).eq("id", id);
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  await audit(ctx.supabase, ctx.userId, "update", "challenge_entry", id, patch);
+  refresh();
+  return { ok: true, message: uz.admin.challenges.saved };
+}

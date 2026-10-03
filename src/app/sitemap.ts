@@ -14,11 +14,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createClient<Database>(url, key, { auth: { persistSession: false } });
   const published = <T extends string>(table: T) =>
     supabase.from(table as "courses").select("slug, updated_at").eq("is_published", true).is("archived_at", null);
-  const [courses, bundles, paths, projects] = await Promise.all([
+  const [courses, bundles, paths, projects, datasets, challenges] = await Promise.all([
     published("courses"),
     published("bundles"),
     published("learning_paths"),
     published("projects"),
+    published("open_datasets"),
+    published("challenges"),
   ]);
   const entries = (prefix: string, rows: { slug: string; updated_at: string }[] | null, priority: number) =>
     (rows ?? []).map((r) => ({ url: `${base}/${prefix}/${r.slug}`, lastModified: r.updated_at, priority }));
@@ -30,6 +32,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...entries("toplam", bundles.data, 0.8),
     ...entries("yol", paths.data, 0.8),
     ...entries("loyiha", projects.data, 0.6),
+    { url: `${base}/datasetlar`, priority: 0.7 },
+    ...entries("dataset", datasets.data, 0.6),
+    { url: `${base}/challenge`, priority: 0.7 },
+    ...entries("challenge", challenges.data, 0.6),
     ...["oferta", "maxfiylik", "qaytarish", "aloqa"].map((p) => ({ url: `${base}/${p}`, priority: 0.3 })),
   ];
 }

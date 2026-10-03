@@ -8,6 +8,7 @@ import {
   Briefcase,
   BookOpen,
   Database,
+  DatabaseZap,
   FileSpreadsheet,
   FlaskConical,
   FolderTree,
@@ -23,6 +24,7 @@ import {
   Route,
   Star,
   Tag,
+  Trophy,
   Users,
 } from "lucide-react";
 import { uz } from "@/lib/i18n/uz";
@@ -42,6 +44,8 @@ const items = [
   { href: "/talabalar", label: uz.admin.nav.students, Icon: Users, ready: true },
   { href: "/datasetlar", label: uz.admin.nav.datasets, Icon: Database, ready: true },
   { href: "/mashqlar", label: uz.admin.nav.exercises, Icon: FlaskConical, ready: true },
+  { href: "/ochiq-datasetlar", label: uz.admin.nav.openData, Icon: DatabaseZap, ready: true },
+  { href: "/challengelar", label: uz.admin.nav.challenges, Icon: Trophy, ready: true },
   { href: "/topshiriqlar", label: uz.admin.nav.assignments, Icon: FileSpreadsheet, ready: true },
   { href: "/muhokamalar", label: uz.admin.nav.comments, Icon: MessageSquare, ready: true },
   { href: "/sharhlar", label: uz.admin.nav.reviews, Icon: Star, ready: true },

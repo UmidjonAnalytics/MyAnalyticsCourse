@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { saveBundle } from "@/app/admin/(panel)/actions/content";
-import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields } from "@/components/admin/fields";
+import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
 import type { FormState } from "@/lib/admin/context";
 import type { Bundle } from "@/lib/database.types";
 import { formatSom } from "@/lib/format";
@@ -19,12 +19,12 @@ export function BundleForm({
   courses: Array<{ id: string; title: string; price: number }>;
   selected: string[];
 }) {
-  const [state, action] = useActionState<FormState, FormData>(saveBundle, { status: "idle" });
+  const [state, action, pending] = useActionState<FormState, FormData>(saveBundle, { status: "idle" });
   const [picked, setPicked] = useState(new Set(selected));
   const fullPrice = courses.filter((c) => picked.has(c.id)).reduce((s, c) => s + c.price, 0);
 
   return (
-    <form action={action} className="card space-y-6 p-5 sm:p-6">
+    <form onSubmit={submitWith(action)} className="card space-y-6 p-5 sm:p-6">
       {bundle ? <input type="hidden" name="id" value={bundle.id} /> : null}
       <TitleSlugFields title={bundle?.title} slug={bundle?.slug} />
 
@@ -62,7 +62,7 @@ export function BundleForm({
       <CoverField defaultValue={bundle?.cover_url} />
       <Checkbox name="is_published" label={t.common.published} defaultChecked={bundle?.is_published ?? false} />
       <div className="flex flex-wrap items-center gap-4 border-t border-border pt-5">
-        <SubmitButton label={bundle ? t.common.save : t.common.create} />
+        <SubmitButton pending={pending} label={bundle ? t.common.save : t.common.create} />
         <FormMessage state={state} />
       </div>
     </form>

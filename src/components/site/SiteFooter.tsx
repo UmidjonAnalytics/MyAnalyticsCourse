@@ -7,6 +7,8 @@ export async function SiteFooter() {
   const s = await getSiteSettings();
   const t = uz.legal;
   const links = [
+    { href: "/datasetlar", label: t.datasets },
+    { href: "/challenge", label: t.challenge },
     { href: "/oferta", label: t.oferta },
     { href: "/maxfiylik", label: t.privacy },
     { href: "/qaytarish", label: t.refunds },

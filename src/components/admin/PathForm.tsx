@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import { savePath } from "@/app/admin/(panel)/actions/content";
-import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields } from "@/components/admin/fields";
+import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
 import type { FormState } from "@/lib/admin/context";
 import type { LearningPath } from "@/lib/database.types";
 import { uz } from "@/lib/i18n/uz";
@@ -24,7 +24,7 @@ export function PathForm({
   courses: Option[];
   bundles: Option[];
 }) {
-  const [state, action] = useActionState<FormState, FormData>(savePath, { status: "idle" });
+  const [state, action, pending] = useActionState<FormState, FormData>(savePath, { status: "idle" });
   const [ids, setIds] = useState(initialIds);
   const [pick, setPick] = useState("");
   const title = new Map(courses.map((x) => [x.id, x.title]));
@@ -39,7 +39,7 @@ export function PathForm({
     });
 
   return (
-    <form action={action} className="card space-y-6 p-5 sm:p-6">
+    <form onSubmit={submitWith(action)} className="card space-y-6 p-5 sm:p-6">
       {path ? <input type="hidden" name="id" value={path.id} /> : null}
       <input type="hidden" name="course_ids" value={ids.join(",")} />
       <TitleSlugFields title={path?.title} slug={path?.slug} />
@@ -133,7 +133,7 @@ export function PathForm({
       <CoverField defaultValue={path?.cover_url} />
       <Checkbox name="is_published" label={c.published} defaultChecked={path?.is_published ?? false} />
       <div className="flex flex-wrap items-center gap-4 border-t border-border pt-5">
-        <SubmitButton label={path ? c.save : c.create} />
+        <SubmitButton pending={pending} label={path ? c.save : c.create} />
         <FormMessage state={state} />
       </div>
     </form>

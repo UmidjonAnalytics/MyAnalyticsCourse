@@ -51,12 +51,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 10. `supabase/migrations/0010_public_profiles.sql` (opt-in public student profiles)
 11. `supabase/migrations/0011_site_settings_legal.sql` (contacts, legal details, oferta/privacy/refund pages)
 12. `supabase/migrations/0012_uzum_provider.sql` (allows "uzum" as a payment provider)
-13. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+13. `supabase/migrations/0013_open_data_challenges.sql` (free data library, monthly challenges)
+14. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0012 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0013 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -428,6 +429,20 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 - Certificate pages link to the owner's profile, and project showcases link authors' names, when
   the profile is public. Turning it off makes the page "not found" right away.
 
+## Free data library and monthly challenges
+
+- **Bepul datasetlar** (admin → "Bepul datasetlar"): upload a CSV/XLSX/ZIP (up to 100 MB, private
+  `open-data` bucket). For CSV the columns, row count and first 10 rows are filled in automatically;
+  add a meaning to each column ("ustun — ma'nosi"). Public pages `/datasetlar` and
+  `/dataset/<slug>`; **downloading needs a free account** (new sign-ups = future students). Downloads
+  are counted.
+- **Oylik challenge** (admin → "Oylik challenge"): title, task, rules, prize, a dataset from the
+  library, start/end time (Tashkent time). Anyone with an account can submit a link, summary and a
+  screenshot while it is open (screenshots go to the public `challenge-images` bucket, each user only
+  into their own folder). Entries become public only **after the deadline**; set 1st–3rd place on the
+  challenge's admin page, hide bad entries. The current challenge appears as a banner on the home page.
+- Admin forms keep what you typed when the server returns an error (no more cleared fields).
+
 ## Launch checklist
 
 Admin → **"Ishga tushirish"** checks everything automatically (env settings, contacts, content) and
@@ -533,5 +548,6 @@ keys) arrives. The database already accepts `uzum` as a provider.
 - Paths + projects (done): learning paths with progress, portfolio projects with checkpoints,
   instructor review and a public showcase.
 - Public profiles (done): opt-in portfolio page with certificates, projects and links.
+- Data library + monthly challenges (done).
 - Launch preparation (in progress): launch checklist, contacts + legal pages, footer, checkout consent,
   sitemap, brand name setting. Waiting for: name, domain, Eskiz, Payme/Click keys, Paynet documents.

@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- admin preview of uploaded covers */
-import { useId, useState } from "react";
+import { startTransition, useId, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, ImageUp, Loader2, Trash2 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
@@ -14,8 +14,21 @@ import { youtubeEmbedUrl, youtubeId } from "@/lib/youtube";
 
 const t = uz.admin.common;
 
-export function SubmitButton({ label = t.save }: { label?: string }) {
-  const { pending } = useFormStatus();
+/**
+ * Submits a form to a useActionState action WITHOUT React's automatic form reset, so typed values
+ * stay in place when the server returns a validation error. Use with <SubmitButton pending={...} />.
+ */
+export function submitWith(dispatch: (payload: FormData) => void) {
+  return (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startTransition(() => dispatch(data));
+  };
+}
+
+export function SubmitButton({ label = t.save, pending: busy }: { label?: string; pending?: boolean }) {
+  const { pending: formPending } = useFormStatus();
+  const pending = busy ?? formPending;
   return (
     <button type="submit" className="btn-primary" disabled={pending}>
       {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}

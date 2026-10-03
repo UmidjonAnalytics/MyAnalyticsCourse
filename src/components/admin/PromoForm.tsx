@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { savePromo } from "@/app/admin/(panel)/actions/sales";
-import { Checkbox, FormMessage, SubmitButton } from "@/components/admin/fields";
+import { Checkbox, FormMessage, SubmitButton, submitWith } from "@/components/admin/fields";
 import type { FormState } from "@/lib/admin/context";
 import type { PromoCode } from "@/lib/database.types";
 import { uz } from "@/lib/i18n/uz";
@@ -20,12 +20,12 @@ export function PromoForm({
   courses: Array<{ id: string; title: string }>;
   bundles: Array<{ id: string; title: string }>;
 }) {
-  const [state, action] = useActionState<FormState, FormData>(savePromo, { status: "idle" });
+  const [state, action, pending] = useActionState<FormState, FormData>(savePromo, { status: "idle" });
   const applies = (promo?.applies_to ?? { all: true }) as { all?: boolean; courses?: string[]; bundles?: string[] };
   const [some, setSome] = useState(!applies.all);
 
   return (
-    <form action={action} className="card space-y-5 p-5 sm:p-6">
+    <form onSubmit={submitWith(action)} className="card space-y-5 p-5 sm:p-6">
       {promo ? <input type="hidden" name="id" value={promo.id} /> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -106,7 +106,7 @@ export function PromoForm({
 
       <Checkbox name="is_active" label={t.active} defaultChecked={promo?.is_active ?? true} />
       <div className="flex flex-wrap items-center gap-4 border-t border-border pt-5">
-        <SubmitButton label={promo ? uz.admin.common.save : uz.admin.common.create} />
+        <SubmitButton pending={pending} label={promo ? uz.admin.common.save : uz.admin.common.create} />
         <FormMessage state={state} />
       </div>
     </form>

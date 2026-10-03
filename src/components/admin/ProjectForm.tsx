@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { saveProject } from "@/app/admin/(panel)/actions/content";
-import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields } from "@/components/admin/fields";
+import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
 import type { FormState } from "@/lib/admin/context";
 import type { Project } from "@/lib/database.types";
 import { uz } from "@/lib/i18n/uz";
@@ -11,9 +11,9 @@ const t = uz.admin.projects;
 const c = uz.admin.common;
 
 export function ProjectForm({ project, courses }: { project?: Project; courses: { id: string; title: string }[] }) {
-  const [state, action] = useActionState<FormState, FormData>(saveProject, { status: "idle" });
+  const [state, action, pending] = useActionState<FormState, FormData>(saveProject, { status: "idle" });
   return (
-    <form action={action} className="card space-y-6 p-5 sm:p-6">
+    <form onSubmit={submitWith(action)} className="card space-y-6 p-5 sm:p-6">
       {project ? <input type="hidden" name="id" value={project.id} /> : null}
       <div>
         <label htmlFor="project-course" className="label">
@@ -60,7 +60,7 @@ export function ProjectForm({ project, courses }: { project?: Project; courses: 
       <CoverField defaultValue={project?.cover_url} />
       <Checkbox name="is_published" label={c.published} defaultChecked={project?.is_published ?? false} />
       <div className="flex flex-wrap items-center gap-4 border-t border-border pt-5">
-        <SubmitButton label={project ? c.save : c.create} />
+        <SubmitButton pending={pending} label={project ? c.save : c.create} />
         <FormMessage state={state} />
       </div>
     </form>

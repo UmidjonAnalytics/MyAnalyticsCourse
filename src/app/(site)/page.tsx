@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { BookOpen, CheckCircle2, Layers } from "lucide-react";
+import { BookOpen, CheckCircle2, Layers, Trophy } from "lucide-react";
 import { CourseCover } from "@/components/CourseCover";
 import { Notice } from "@/components/Notice";
 import { getCurrentUser } from "@/lib/auth/session";
 import { PathCardView, ProjectCardView } from "@/components/catalog/Cards";
 import { listCatalog } from "@/lib/data/catalog";
 import { listPaths, listProjects } from "@/lib/data/paths";
+import { daysLeft } from "@/lib/challenge";
 import { isSupabaseConfigured } from "@/lib/env";
 import { formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
@@ -18,9 +19,24 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
   const configured = isSupabaseConfigured();
   const user = configured ? await getCurrentUser() : null;
   const supabase = configured ? await createClient() : null;
-  const [catalog, paths, projects] = supabase
-    ? await Promise.all([listCatalog(supabase, user?.id ?? null), listPaths(supabase), listProjects(supabase)])
-    : [null, [], []];
+  const [catalog, paths, projects, activeChallenge] = supabase
+    ? await Promise.all([
+        listCatalog(supabase, user?.id ?? null),
+        listPaths(supabase),
+        listProjects(supabase),
+        supabase
+          .from("challenges")
+          .select("title, slug, short_description, prize, ends_at")
+          .eq("is_published", true)
+          .is("archived_at", null)
+          .lte("starts_at", new Date().toISOString())
+          .gte("ends_at", new Date().toISOString())
+          .order("ends_at")
+          .limit(1)
+          .maybeSingle()
+          .then((r) => r.data),
+      ])
+    : [null, [], [], null];
 
   const activeCat = catalog?.categories.find((c) => c.slug === yonalish) ?? null;
   const courses = catalog ? catalog.courses.filter((c) => !activeCat || c.category_id === activeCat.id) : [];
@@ -46,6 +62,25 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
           </a>
         </div>
       </section>
+
+      {activeChallenge ? (
+        <section aria-labelledby="challenge-title" className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-accent bg-accent-soft p-5 sm:p-6">
+          <div className="min-w-0 max-w-2xl">
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent-text">
+              <Trophy className="size-4" aria-hidden="true" />
+              {uz.challenge.homeTitle} · {uz.challenge.daysLeft(daysLeft(activeChallenge.ends_at))}
+            </p>
+            <h2 id="challenge-title" className="mt-1 text-xl font-bold">
+              {activeChallenge.title}
+            </h2>
+            <p className="mt-1 text-muted">{activeChallenge.short_description}</p>
+            {activeChallenge.prize ? <p className="mt-1 text-sm font-semibold">{uz.challenge.prize}: {activeChallenge.prize}</p> : null}
+          </div>
+          <Link href={`/challenge/${activeChallenge.slug}`} className="btn-primary">
+            {uz.challenge.submitTitle}
+          </Link>
+        </section>
+      ) : null}
 
       {paths.length > 0 ? (
         <section className="mt-16" aria-labelledby="paths-title">

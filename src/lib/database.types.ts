@@ -255,6 +255,59 @@ export type SiteSettings = {
 
 export type SitePage = { slug: string; title: string; body_md: string; updated_at: Timestamp };
 
+export type OpenDataset = {
+  id: string;
+  title: string;
+  slug: string;
+  short_description: string;
+  description_md: string;
+  industry: string;
+  tags: string[];
+  file_path: string | null;
+  file_name: string;
+  size_bytes: number | null;
+  row_count: number | null;
+  columns: Json;
+  preview: Json;
+  download_count: number;
+  is_published: boolean;
+  position: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type Challenge = {
+  id: string;
+  title: string;
+  slug: string;
+  short_description: string;
+  brief_md: string;
+  rules_md: string;
+  prize: string;
+  dataset_id: string | null;
+  cover_url: string | null;
+  starts_at: Timestamp;
+  ends_at: Timestamp;
+  is_published: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  archived_at: Timestamp | null;
+};
+
+export type ChallengeEntry = {
+  id: string;
+  challenge_id: string;
+  user_id: string;
+  link_url: string;
+  image_path: string | null;
+  summary: string;
+  place: number | null;
+  hidden_at: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
 export type Module = {
   id: string;
   course_id: string;
@@ -542,6 +595,13 @@ export type Database = {
       >;
       instructors: Table<Instructor, "name">;
       site_settings: Table<SiteSettings, never>;
+      open_datasets: Table<OpenDataset, "title" | "slug">;
+      challenges: Table<Challenge, "title" | "slug" | "ends_at", [Rel<"challenges_dataset_id_fkey", "dataset_id", "open_datasets">]>;
+      challenge_entries: Table<
+        ChallengeEntry,
+        "challenge_id" | "user_id" | "link_url",
+        [Rel<"challenge_entries_challenge_id_fkey", "challenge_id", "challenges">, Rel<"challenge_entries_user_id_fkey", "user_id", "profiles">]
+      >;
       site_pages: Table<SitePage, "slug" | "title">;
       quiz_questions: Table<QuizQuestion, "lesson_id" | "prompt" | "options", [Rel<"quiz_questions_lesson_id_fkey", "lesson_id", "lessons">]>;
       quiz_answer_keys: Table<
@@ -724,6 +784,22 @@ export type Database = {
         Returns: Array<{ id: string; link_url: string; summary: string; reviewed_at: Timestamp | null; author: string; username: string | null }>;
       };
       public_profile: { Args: { p_username: string }; Returns: Json | null };
+      open_dataset_downloaded: { Args: { p_id: string }; Returns: undefined };
+      challenge_is_open: { Args: { p_challenge_id: string }; Returns: boolean };
+      challenge_entry_count: { Args: { p_challenge_id: string }; Returns: number };
+      challenge_gallery: {
+        Args: { p_challenge_id: string };
+        Returns: Array<{
+          id: string;
+          link_url: string;
+          image_path: string | null;
+          summary: string;
+          place: number | null;
+          author: string;
+          username: string | null;
+          created_at: Timestamp;
+        }>;
+      };
       certificate_public: {
         Args: { p_code: string };
         Returns: Array<{

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { saveCourse } from "@/app/admin/(panel)/actions/content";
-import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields } from "@/components/admin/fields";
+import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
 import type { FormState } from "@/lib/admin/context";
 import type { Category, Course, Instructor } from "@/lib/database.types";
 import { uz } from "@/lib/i18n/uz";
@@ -37,9 +37,9 @@ export function CourseForm({
   categories: Category[];
   instructors?: Pick<Instructor, "id" | "name">[];
 }) {
-  const [state, action] = useActionState<FormState, FormData>(saveCourse, { status: "idle" });
+  const [state, action, pending] = useActionState<FormState, FormData>(saveCourse, { status: "idle" });
   return (
-    <form action={action} className="card space-y-6 p-5 sm:p-6">
+    <form onSubmit={submitWith(action)} className="card space-y-6 p-5 sm:p-6">
       {course ? <input type="hidden" name="id" value={course.id} /> : null}
       <TitleSlugFields title={course?.title} slug={course?.slug} />
       <div className="grid gap-4 sm:grid-cols-2">
@@ -99,7 +99,7 @@ export function CourseForm({
       </p>
       <Checkbox name="is_published" label={t.published} defaultChecked={course?.is_published ?? false} />
       <div className="flex flex-wrap items-center gap-4 border-t border-border pt-5">
-        <SubmitButton label={course ? t.save : t.create} />
+        <SubmitButton pending={pending} label={course ? t.save : t.create} />
         <FormMessage state={state} />
       </div>
     </form>
