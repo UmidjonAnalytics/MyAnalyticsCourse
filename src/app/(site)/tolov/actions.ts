@@ -38,7 +38,7 @@ export async function getQuote(
 const startSchema = z.object({
   ref: refSchema,
   promo: promoSchema,
-  provider: z.enum(["payme", "click", "paynet", "test"]),
+  provider: z.enum(["payme", "click", "paynet", "uzum", "test"]),
   card: z.boolean().default(false),
 });
 

@@ -22,7 +22,7 @@ type Table<Row, Req extends keyof Row, Rels extends unknown[] = []> = {
 export type Role = "student" | "admin";
 export type ProductType = "course" | "bundle";
 export type OrderStatus = "pending" | "paid" | "cancelled" | "refunded";
-export type PaymentProviderName = "payme" | "click" | "paynet" | "test";
+export type PaymentProviderName = "payme" | "click" | "paynet" | "uzum" | "test";
 export type OrderProvider = PaymentProviderName | "free" | "manual";
 export type PaymentState = "created" | "performed" | "cancelled" | "cancelled_after_perform" | "failed";
 export type EnrollmentSource = "purchase" | "bundle" | "manual";

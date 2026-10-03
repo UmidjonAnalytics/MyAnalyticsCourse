@@ -50,12 +50,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 9. `supabase/migrations/0009_paths_projects.sql` (learning paths, portfolio projects)
 10. `supabase/migrations/0010_public_profiles.sql` (opt-in public student profiles)
 11. `supabase/migrations/0011_site_settings_legal.sql` (contacts, legal details, oferta/privacy/refund pages)
-12. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+12. `supabase/migrations/0012_uzum_provider.sql` (allows "uzum" as a payment provider)
+13. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0011 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0012 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -432,7 +433,19 @@ Secrets live only in Netlify's settings or in `.env.local` (never committed to G
 Admin → **"Ishga tushirish"** checks everything automatically (env settings, contacts, content) and
 says what is left. The dashboard shows a red warning while test login or test payments are on.
 
-- **Name**: set `NEXT_PUBLIC_BRAND_NAME` in Vercel, then Redeploy.
+- **Name**: **Data Expert** (`NEXT_PUBLIC_BRAND_NAME` in Vercel; change it there and Redeploy).
+- **Domain: dataexpert.uz** — already added to the Vercel project (with `admin.dataexpert.uz`, and
+  `www.dataexpert.uz` redirecting to the main address). At the .uz registrar set these DNS records:
+
+  | Type | Name / Host | Value |
+  | --- | --- | --- |
+  | A | `@` (dataexpert.uz) | `76.76.21.21` |
+  | CNAME | `admin` | `cname.vercel-dns.com` |
+  | CNAME | `www` | `cname.vercel-dns.com` |
+
+  When Vercel shows them as "Valid": set `PUBLIC_SITE_URL=https://dataexpert.uz` and
+  `ADMIN_HOSTNAMES` can be cleared (any `admin.` host is the admin panel); in Supabase → Auth set
+  Site URL to `https://dataexpert.uz` (the allow list already contains the new addresses).
 - **Contacts + legal details**: admin → **"Sayt sozlamalari"** (company, STIR, address, phone, e-mail,
   Telegram, hours). They appear in the footer, on `/aloqa` and inside the legal texts.
 - **Legal pages**: `/oferta`, `/maxfiylik`, `/qaytarish` — Uzbek draft texts, editable in "Sayt
@@ -493,6 +506,11 @@ Every callback is stored in `payment_events` and shown on the admin order page.
 
 Shown as "Tez orada" at checkout. Send Claude the Paynet merchant documentation; the protocol is not
 guessed.
+
+### Uzum
+
+Same as Paynet: listed as "Tez orada" at checkout until Uzum's merchant documentation (API and test
+keys) arrives. The database already accepts `uzum` as a provider.
 
 ## Phases
 

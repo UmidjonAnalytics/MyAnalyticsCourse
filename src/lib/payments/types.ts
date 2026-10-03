@@ -1,5 +1,5 @@
-// Every payment provider (Payme, Click, Paynet, test) is one module implementing this.
-export type ProviderName = "payme" | "click" | "paynet" | "test";
+// Every payment provider (Payme, Click, Paynet, Uzum, test) is one module implementing this.
+export type ProviderName = "payme" | "click" | "paynet" | "uzum" | "test";
 
 export type CheckoutOrder = { id: string; number: number; finalAmount: number; title: string };
 

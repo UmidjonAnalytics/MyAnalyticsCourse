@@ -13,6 +13,15 @@ const paynet: PaymentProvider = {
   },
 };
 
+// Uzum: same rule as Paynet — waiting for Uzum's merchant documentation. Never offered yet.
+const uzum: PaymentProvider = {
+  name: "uzum",
+  isConfigured: () => false,
+  checkoutUrl: () => {
+    throw new Error("Uzum is not implemented yet");
+  },
+};
+
 // Test mode: a fake payment page on our own site. Only when ENABLE_TEST_PAYMENTS=true.
 const test: PaymentProvider = {
   name: "test",
@@ -20,15 +29,15 @@ const test: PaymentProvider = {
   checkoutUrl: (order) => `/tolov/sinov/${order.id}`,
 };
 
-const all: Record<ProviderName, PaymentProvider> = { payme, click, paynet, test };
+const all: Record<ProviderName, PaymentProvider> = { payme, click, paynet, uzum, test };
 
 export function getProvider(name: ProviderName): PaymentProvider {
   return all[name];
 }
 
-/** Providers shown at checkout, in this order. Paynet is listed (disabled) so students know it is coming. */
+/** Providers shown at checkout, in this order. Paynet and Uzum are listed (disabled) so students know they are coming. */
 export function checkoutProviders(): Array<{ name: ProviderName; enabled: boolean }> {
-  const list: Array<{ name: ProviderName; enabled: boolean }> = (["payme", "click", "paynet"] as const).map((n) => ({
+  const list: Array<{ name: ProviderName; enabled: boolean }> = (["payme", "click", "paynet", "uzum"] as const).map((n) => ({
     name: n,
     enabled: all[n].isConfigured(),
   }));

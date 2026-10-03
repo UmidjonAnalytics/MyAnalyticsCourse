@@ -45,6 +45,7 @@ export async function launchChecks(supabase: Supabase): Promise<Check[]> {
     { id: "payme", group: "payments", status: payme ? (on(env.PAYME_TEST) ? "warn" : "ok") : "todo" },
     { id: "click", group: "payments", status: click ? "ok" : "todo" },
     { id: "paynet", group: "payments", status: "todo" },
+    { id: "uzum", group: "payments", status: "todo" },
     { id: "courses", group: "content", status: withLessons.length > 0 ? "ok" : "todo" },
     { id: "coursePages", group: "content", status: complete ? "ok" : "todo" },
     { id: "vercelPro", group: "hosting", status: "manual" },

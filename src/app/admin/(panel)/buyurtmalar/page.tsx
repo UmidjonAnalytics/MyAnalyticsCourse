@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: uz.admin.orders.title };
 
 const STATUSES = ["pending", "paid", "cancelled", "refunded"] as const;
-const PROVIDERS = ["payme", "click", "paynet", "test", "free"] as const;
+const PROVIDERS = ["payme", "click", "paynet", "uzum", "test", "free"] as const;
 const PAGE = 50;
 
 type SP = Promise<{ holat?: string; tizim?: string; q?: string; sahifa?: string }>;
