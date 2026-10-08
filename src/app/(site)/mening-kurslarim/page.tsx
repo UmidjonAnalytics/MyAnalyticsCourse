@@ -146,9 +146,9 @@ export default async function MyCoursesPage() {
           <h2 id="stats" className="sr-only">
             {t.stats}
           </h2>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {tiles.map(({ Icon, label, value, hint }) => (
-              <li key={label} className="card p-5">
+              <li key={label} className="card p-4 sm:p-5">
                 <span className="flex items-center gap-2 text-sm font-semibold text-muted">
                   <Icon className="size-4" aria-hidden="true" />
                   {label}

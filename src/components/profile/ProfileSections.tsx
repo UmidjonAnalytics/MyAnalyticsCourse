@@ -9,6 +9,7 @@ import { LinkedMethods } from "@/components/profile/LinkedMethods";
 import { NameForm } from "@/components/profile/NameForm";
 import { visibleEmail, type OAuthProvider } from "@/lib/auth/constants";
 import { currentDeviceId } from "@/lib/auth/device";
+import { getSiteSettings } from "@/lib/data/site";
 import { loginFlags } from "@/lib/env";
 import { describeUserAgent, formatDate, formatDateTime, formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
@@ -17,13 +18,13 @@ import { createClient } from "@/lib/supabase/server";
 
 // Everything in the profile: used by the /profil page and by the slide-in right panel.
 // `compact` = narrower spacing for the panel.
-export async function ProfileSections({ compact = false }: { compact?: boolean }) {
+export async function ProfileSections({ compact = false, logout = true }: { compact?: boolean; logout?: boolean }) {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const userId = claims?.claims?.sub;
   if (!userId) return null;
 
-  const [{ data: profile }, { data: authUser }, devicesRes, ordersRes, deviceId] = await Promise.all([
+  const [{ data: profile }, { data: authUser }, devicesRes, ordersRes, deviceId, site] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.auth.getUser(),
     supabase
@@ -37,7 +38,9 @@ export async function ProfileSections({ compact = false }: { compact?: boolean }
       .eq("status", "paid")
       .order("paid_at", { ascending: false }),
     currentDeviceId(),
+    getSiteSettings(),
   ]);
+  const supportUrl = site.telegram_url.trim();
 
   if (!profile) return <Notice tone="error">{uz.profile.loadError}</Notice>;
 
@@ -167,20 +170,24 @@ export async function ProfileSections({ compact = false }: { compact?: boolean }
         </div>
       </section>
 
-      <section className={section} aria-labelledby={`${idp}support`}>
-        <h2 id={`${idp}support`} className={heading}>
-          {uz.profile.support}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{uz.profile.supportText}</p>
-        <a href={uz.brand.supportUrl} className="btn-secondary mt-3" target="_blank" rel="noopener noreferrer">
-          <LifeBuoy className="size-4" aria-hidden="true" />
-          {uz.profile.supportLink}
-        </a>
-      </section>
+      {supportUrl ? (
+        <section className={section} aria-labelledby={`${idp}support`}>
+          <h2 id={`${idp}support`} className={heading}>
+            {uz.profile.support}
+          </h2>
+          <p className="mt-1 text-sm text-muted">{uz.profile.supportText}</p>
+          <a href={supportUrl} className="btn-secondary mt-3" target="_blank" rel="noopener noreferrer">
+            <LifeBuoy className="size-4" aria-hidden="true" />
+            {uz.profile.supportLink}
+          </a>
+        </section>
+      ) : null}
 
-      <div className={compact ? "border-t border-border pt-5" : "pt-2"}>
-        <LogoutButton />
-      </div>
+      {logout ? (
+        <div className={compact ? "border-t border-border pt-5" : "pt-2"}>
+          <LogoutButton />
+        </div>
+      ) : null}
     </div>
   );
 }

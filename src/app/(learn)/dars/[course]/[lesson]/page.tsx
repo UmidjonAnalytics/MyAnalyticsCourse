@@ -231,7 +231,8 @@ export default async function LessonPage({ params }: { params: Params }) {
         />
       </header>
 
-      {courseDone ? (
+      {/* After the certificate is claimed, the banner stays only on the last lesson so it doesn't push videos down. */}
+      {courseDone && (!cert || index === outline.lessons.length - 1) ? (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-accent bg-accent-soft p-4 sm:p-5">
           <p className="flex items-center gap-2 font-semibold">
             <Award className="size-5 text-accent-text" aria-hidden="true" />

@@ -92,9 +92,9 @@ export default async function CertificatePage({ params }: { params: Params }) {
                 {uz.brand.name}
               </span>
             </div>
-            <p className="mt-[3cqw] font-display font-bold uppercase tracking-[0.35em] text-[#0b6e4f]" style={{ fontSize: "3.4cqw" }}>
+            <h1 className="mt-[3cqw] font-display font-bold uppercase tracking-[0.35em] text-[#0b6e4f]" style={{ fontSize: "3.4cqw" }}>
               {t.heading}
-            </p>
+            </h1>
             <p className="mt-[2.2cqw] text-[#565c63]" style={{ fontSize: "1.6cqw" }}>
               {t.certifies}
             </p>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Notice } from "@/components/Notice";
 import { PublicProfileForm } from "@/components/profile/PublicProfileForm";
+import { LogoutButton } from "@/components/LogoutButton";
 import { ProfileSections } from "@/components/profile/ProfileSections";
 import { authErrorMessage } from "@/lib/auth/errors";
 import { requireUser } from "@/lib/auth/session";
@@ -20,7 +21,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     <div className="mx-auto max-w-2xl space-y-5 px-4 py-8 sm:py-12">
       <h1 className="sr-only">{uz.profile.title}</h1>
       {xato ? <Notice tone="error">{authErrorMessage(xato)}</Notice> : null}
-      <ProfileSections />
+      <ProfileSections logout={false} />
       <PublicProfileForm
         origin={origin}
         initial={{
@@ -34,6 +35,9 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           website_url: p?.website_url ?? "",
         }}
       />
+      <div className="pt-2">
+        <LogoutButton />
+      </div>
     </div>
   );
 }

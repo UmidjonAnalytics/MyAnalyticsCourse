@@ -11,7 +11,6 @@ export const uz = {
     tagline: "Ma'lumotlar tahlilini o'zbek tilida o'rganing",
     adminName: "Boshqaruv paneli",
     // Support link shown in the profile panel (placeholder: put your Telegram link here).
-    supportUrl: "https://t.me/",
   },
 
   common: {
@@ -35,7 +34,11 @@ export const uz = {
     catalog: "Kurslar",
     paths: "O'quv yo'llari",
     projects: "Loyihalar",
+    datasets: "Datasetlar",
+    challenge: "Challenge",
     myCourses: "Mening kurslarim",
+    menu: "Menyu",
+    closeMenu: "Menyuni yopish",
     login: "Kirish",
     profile: "Profil",
     openProfile: "Profil sozlamalarini ochish",
@@ -622,6 +625,8 @@ export const uz = {
     incResources: (n: number) => `${n} ta yuklab olinadigan material`,
     incCertificate: "Tugatganlik sertifikati",
     incLifetime: "Umrbod kirish",
+    startFree: (n: number) => (n > 1 ? `Bepul darslarni boshlash (${n} ta)` : "Bepul darsni boshlash"),
+    freeLessons: (n: number) => `${n} ta dars bepul`,
     level: "Daraja",
     levels: { beginner: "Boshlang'ich", intermediate: "O'rta", advanced: "Yuqori" } as Record<string, string>,
     moduleMeta: (lessons: number, minutes: number) =>

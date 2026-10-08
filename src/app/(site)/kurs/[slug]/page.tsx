@@ -93,6 +93,8 @@ export default async function CoursePage({ params }: { params: Params }) {
   const reviewList = reviews ?? [];
   const avg = reviewList.length ? reviewList.reduce((a, r) => a + r.rating, 0) / reviewList.length : 0;
   const hasAccessNow = owned || hasAccess;
+  const firstFree = outline.lessons.find((l) => l.is_free_preview);
+  const freeCount = outline.lessons.filter((l) => l.is_free_preview).length;
 
   const includes = [
     { Icon: Video, text: p.incLessons(total), show: total > 0 },
@@ -107,7 +109,21 @@ export default async function CoursePage({ params }: { params: Params }) {
   ].filter((x) => x.show);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+    <div className={`mx-auto max-w-6xl px-4 py-8 sm:py-12 ${hasAccessNow ? "" : "pb-28 lg:pb-12"}`}>
+      {/* Phones: the price card is far down the page, so keep price + buy button pinned at the bottom. */}
+      {hasAccessNow ? null : (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 py-3 shadow-[0_-4px_16px_rgb(0_0_0/0.06)] lg:hidden">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-display text-lg font-bold leading-tight">{formatSom(course.price)}</p>
+              {freeCount > 0 ? <p className="text-xs text-muted">{p.freeLessons(freeCount)}</p> : null}
+            </div>
+            <Link href={`/tolov/kurs/${course.slug}`} className="btn-primary shrink-0">
+              {uz.course.buy}
+            </Link>
+          </div>
+        </div>
+      )}
       <Link href="/#kurslar" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted hover:text-text">
         <ArrowLeft className="size-4" aria-hidden="true" />
         {uz.course.back}
@@ -214,9 +230,11 @@ export default async function CoursePage({ params }: { params: Params }) {
                             <LessonIcon lesson={l} />
                             <span className="min-w-0 flex-1">{l.title}</span>
                             <span className="flex shrink-0 items-center gap-2 text-muted">
-                              {f?.quiz_questions ? <ListChecks className="size-4" aria-label={p.hasQuiz} role="img" /> : null}
-                              {f && f.exercises + f.assignments > 0 ? <Code2 className="size-4" aria-label={p.hasPractice} role="img" /> : null}
-                              {f?.resources ? <Paperclip className="size-4" aria-label={p.hasResources} role="img" /> : null}
+                              <span className="hidden items-center gap-2 sm:flex">
+                                {f?.quiz_questions ? <ListChecks className="size-4" aria-label={p.hasQuiz} role="img" /> : null}
+                                {f && f.exercises + f.assignments > 0 ? <Code2 className="size-4" aria-label={p.hasPractice} role="img" /> : null}
+                                {f?.resources ? <Paperclip className="size-4" aria-label={p.hasResources} role="img" /> : null}
+                              </span>
                               {l.is_free_preview && !hasAccess ? (
                                 <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-text">{uz.course.freePreview}</span>
                               ) : null}
@@ -408,7 +426,13 @@ export default async function CoursePage({ params }: { params: Params }) {
                   <Link href={`/tolov/kurs/${course.slug}`} className="btn-primary w-full">
                     {uz.course.buy}
                   </Link>
-                  {!user && outline.lessons.some((l) => l.is_free_preview) ? <p className="text-sm text-muted">{uz.course.loginToWatch}</p> : null}
+                  {firstFree ? (
+                    <Link href={lessonHref(firstFree)} className="btn-secondary w-full">
+                      <PlayCircle className="size-4" aria-hidden="true" />
+                      {p.startFree(freeCount)}
+                    </Link>
+                  ) : null}
+                  {!user && firstFree ? <p className="text-sm text-muted">{uz.course.loginToWatch}</p> : null}
                 </>
               )}
               <div className="border-t border-border pt-4">
