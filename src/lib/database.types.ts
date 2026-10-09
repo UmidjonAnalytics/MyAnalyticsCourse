@@ -857,6 +857,8 @@ export type Database = {
       admin_reorder: { Args: { p_table: "categories" | "courses" | "modules" | "lessons" | "bundles"; p_ids: string[] }; Returns: undefined };
       admin_set_role: { Args: { p_user_id: string; p_role: Role }; Returns: undefined };
       admin_purge: { Args: { p_entity: "course" | "module" | "lesson" | "bundle"; p_id: string }; Returns: undefined };
+      admin_import_outline: { Args: { p_course_id: string; p_modules: Json; p_free_count: number }; Returns: { modules: number; lessons: number } };
+      admin_update_lessons: { Args: { p_course_id: string; p_rows: Json }; Returns: number };
       admin_students: {
         Args: { p_search: string; p_limit: number; p_offset: number };
         Returns: Array<{

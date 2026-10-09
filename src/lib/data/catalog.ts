@@ -196,7 +196,9 @@ async function loadOutline(slug: string, userId: string | null): Promise<CourseO
         };
       }),
   }));
-  const lessons = modules.flatMap((m) => m.lessons);
+  // A module whose lessons are all drafts stays hidden from students.
+  const visibleModules = modules.filter((m) => m.lessons.length > 0);
+  const lessons = visibleModules.flatMap((m) => m.lessons);
   const next = lessons.find((l) => l.state === "open") ?? lessons.find((l) => l.state !== "locked") ?? null;
   if (next && next.state === "open") next.state = "current";
   const completed = lessons.filter((l) => l.status === "completed").length;
@@ -205,7 +207,7 @@ async function loadOutline(slug: string, userId: string | null): Promise<CourseO
   const { categories, ...rest } = course;
   return {
     course: { ...rest, categoryName: categories?.name ?? null },
-    modules,
+    modules: visibleModules,
     lessons,
     hasAccess,
     owned: owned.has(course.id),

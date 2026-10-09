@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ListPlus, PlaySquare } from "lucide-react";
 import { CurriculumEditor, type EditorModule } from "@/components/admin/CurriculumEditor";
 import { uz } from "@/lib/i18n/uz";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +36,17 @@ export default async function Curriculum({ params }: { params: Promise<{ id: str
         {course.title}
       </Link>
       <h1 className="mt-2 text-2xl font-bold">{uz.admin.curriculum.title}</h1>
-      <p className="mb-6 mt-1 text-muted">{uz.admin.curriculum.lead}</p>
+      <p className="mt-1 text-muted">{uz.admin.curriculum.lead}</p>
+      <div className="mb-6 mt-4 flex flex-wrap gap-2">
+        <Link href={`/kurslar/${course.id}/reja`} className="btn-secondary">
+          <ListPlus className="size-4" aria-hidden="true" />
+          {uz.admin.curriculum.importOutline}
+        </Link>
+        <Link href={`/kurslar/${course.id}/videolar`} className="btn-secondary">
+          <PlaySquare className="size-4" aria-hidden="true" />
+          {uz.admin.curriculum.bulkVideos}
+        </Link>
+      </div>
       <CurriculumEditor courseId={course.id} modules={editorModules} />
     </div>
   );

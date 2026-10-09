@@ -53,12 +53,13 @@ paste into the SQL editor → click **Run** → you should see "Success. No rows
 12. `supabase/migrations/0012_uzum_provider.sql` (allows "uzum" as a payment provider)
 13. `supabase/migrations/0013_open_data_challenges.sql` (free data library, monthly challenges)
 14. `supabase/migrations/0014_harden_grants.sql` (security: removes write rights the public `anon` role never needs)
-15. `supabase/seed.sql` (sample courses; optional, safe to run twice)
+15. `supabase/migrations/0015_bulk_curriculum.sql` (admin: create a course outline at once, edit many lessons at once)
+16. `supabase/seed.sql` (sample courses; optional, safe to run twice)
 
 Check it worked: **Table Editor** → you should see `courses` with 3 rows.
 
 > If `SUPABASE_ACCESS_TOKEN` is set in the Claude Code environment, Claude runs new migrations
-> for you and tells you when. (Already done: 0001–0014 on the current project, plus the practice seed below.)
+> for you and tells you when. (Already done: 0001–0015 on the current project, plus the practice seed below.)
 >
 > Run each migration only **once**. Running 0001–0003 a second time gives "already exists" errors
 > (nothing breaks). New changes will always come as new numbered files (0004, 0005, ...).
@@ -559,5 +560,9 @@ keys) arrives. The database already accepts `uzum` as a provider.
   `anon` role can no longer write anywhere (0014).
 - Student dashboard (done): "My courses" greets the student, shows where to continue, the next step,
   lessons done, learning time, weekly streak, certificates and a 12-week activity strip.
+- Pre-launch polish (done): phone menu, pinned price bar on course pages, "start free lesson" button, page fixes.
+- Bulk course builder (done): admin → course → "Modullar va darslar" → "Rejadan qo'shish" (paste the outline:
+  `# Module` lines and one lesson per line, optional `| YouTube link | minutes`), then "Videolar va bepul darslar"
+  (all lessons in one table: video link, minutes, free, published; one Save).
 - Launch preparation (in progress): launch checklist, contacts + legal pages, footer, checkout consent,
   sitemap, brand name setting. Waiting for: DNS for dataexpert.uz, Eskiz, Payme/Click keys, Paynet and Uzum documents.
