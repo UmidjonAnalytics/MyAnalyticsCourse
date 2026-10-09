@@ -1,15 +1,19 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { BookOpen, CheckCircle2, Layers, Trophy } from "lucide-react";
 import { CourseCover } from "@/components/CourseCover";
 import { Notice } from "@/components/Notice";
+import { Price } from "@/components/Price";
 import { getCurrentUser } from "@/lib/auth/session";
 import { PathCardView, ProjectCardView } from "@/components/catalog/Cards";
 import { listCatalog } from "@/lib/data/catalog";
 import { listPaths, listProjects } from "@/lib/data/paths";
+import { getSiteSettings } from "@/lib/data/site";
 import { daysLeft } from "@/lib/challenge";
 import { isSupabaseConfigured } from "@/lib/env";
-import { formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
+import { currentPrice } from "@/lib/pricing";
+import { REFERRAL_COOKIE } from "@/lib/referral";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = Promise<{ yonalish?: string }>;
@@ -38,12 +42,22 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
       ])
     : [null, [], [], null];
 
+  // Visitor came through a friend's invite link: tell them about the first-purchase discount.
+  const invited = Boolean((await cookies()).get(REFERRAL_COOKIE)) && !(catalog?.courses.some((c) => c.owned) ?? false);
+  const site = invited && configured ? await getSiteSettings() : null;
+  const invitePercent = site?.referral_enabled ? site.referral_friend_percent : 0;
+
   const activeCat = catalog?.categories.find((c) => c.slug === yonalish) ?? null;
   const courses = catalog ? catalog.courses.filter((c) => !activeCat || c.category_id === activeCat.id) : [];
   const courseTitle = new Map((catalog?.courses ?? []).map((c) => [c.id, c.title]));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+      {invitePercent > 0 ? (
+        <div className="mb-8">
+          <Notice tone="success">{uz.referral.banner(invitePercent)}</Notice>
+        </div>
+      ) : null}
       <section className="max-w-2xl">
         <h1 className="text-4xl font-bold leading-tight sm:text-5xl">{uz.home.title}</h1>
         <p className="mt-4 text-lg text-muted">{uz.home.lead}</p>
@@ -157,12 +171,12 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
                       </Link>
                     </h3>
                     <p className="mt-2 flex-1 text-sm text-muted">{c.short_description}</p>
-                    <div className="mt-4 flex items-center justify-between text-sm">
+                    <div className="mt-4 flex items-end justify-between gap-3 text-sm">
                       <span className="inline-flex items-center gap-1.5 text-muted">
                         <BookOpen className="size-4" aria-hidden="true" />
                         {uz.home.lessons(c.lessonCount)}
                       </span>
-                      <span className="font-bold">{c.owned ? uz.catalog.continue : formatSom(c.price)}</span>
+                      {c.owned ? <span className="font-bold">{uz.catalog.continue}</span> : <Price value={currentPrice(c)} size="sm" />}
                     </div>
                   </div>
                 </li>
@@ -191,7 +205,9 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
                 </h3>
                 <p className="mt-2 text-sm text-muted">{b.short_description}</p>
                 <p className="mt-3 flex-1 text-sm">{b.courseIds.map((id) => courseTitle.get(id)).filter(Boolean).join(" · ")}</p>
-                <p className="mt-4 text-right font-bold">{formatSom(b.price)}</p>
+                <p className="mt-4 text-right">
+                  <Price value={currentPrice(b)} size="sm" />
+                </p>
               </li>
             ))}
           </ul>

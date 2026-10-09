@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { saveCourse } from "@/app/admin/(panel)/actions/content";
-import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
+import { Checkbox, CoverField, FormMessage, MarkdownField, SaleFields, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
 import type { FormState } from "@/lib/admin/context";
 import type { Category, Course, Instructor } from "@/lib/database.types";
 import { uz } from "@/lib/i18n/uz";
@@ -58,6 +58,7 @@ export function CourseForm({
         </div>
         <TextField name="price" label={t.price} defaultValue={String(course?.price ?? 0)} inputMode="numeric" required />
       </div>
+      <SaleFields price={course?.sale_price} endsAt={course?.sale_ends_at} />
       <TextField name="short_description" label={t.shortDescription} defaultValue={course?.short_description} maxLength={300} />
       <MarkdownField name="description" label={t.description} defaultValue={course?.description} rows={8} />
       <CoverField defaultValue={course?.cover_url} />

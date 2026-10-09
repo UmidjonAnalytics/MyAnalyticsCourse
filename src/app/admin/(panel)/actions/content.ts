@@ -30,6 +30,19 @@ const optionalUrl = z
   .transform((v) => v || null)
   .pipe(z.url().nullable());
 const md = z.string().max(100_000).default("");
+// Sale ("aksiya"): empty = no sale. The end time comes from <input type="datetime-local"> in Tashkent time (UTC+5).
+const salePrice = z
+  .string()
+  .default("")
+  .transform((v) => v.replace(/\s/g, ""))
+  .pipe(z.string().regex(/^\d{0,10}$/, e.priceInvalid))
+  .transform((v) => (v === "" ? null : Number(v)));
+const saleEndsAt = z
+  .string()
+  .default("")
+  .pipe(z.string().regex(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})?$/, e.invalid))
+  .transform((v) => (v === "" ? null : new Date(`${v}:00+05:00`).toISOString()));
+const saleOk = (v: { price: number; sale_price: number | null }) => v.sale_price === null || v.sale_price < v.price;
 
 function firstError(err: z.ZodError): string {
   return err.issues[0]?.message ?? e.invalid;
@@ -78,8 +91,10 @@ const courseSchema = z.object({
   outcomes: lines,
   audience: lines,
   requirements: lines,
+  sale_price: salePrice,
+  sale_ends_at: saleEndsAt,
   is_published: checkbox,
-});
+}).refine(saleOk, { message: uz.admin.sale.invalid });
 
 export async function saveCourse(_prev: FormState, form: FormData): Promise<FormState> {
   const ctx = await adminContext();
@@ -98,6 +113,8 @@ export async function saveCourse(_prev: FormState, form: FormData): Promise<Form
     outcomes: fd(form, "outcomes") ?? "",
     audience: fd(form, "audience") ?? "",
     requirements: fd(form, "requirements") ?? "",
+    sale_price: fd(form, "sale_price") ?? "",
+    sale_ends_at: fd(form, "sale_ends_at") ?? "",
     is_published: form.get("is_published"),
   });
   if (!parsed.success) return { status: "error", error: firstError(parsed.error) };
@@ -357,7 +374,9 @@ const bundleSchema = z.object({
   allow_upgrade_pricing: checkbox,
   is_published: checkbox,
   course_ids: z.array(z.uuid()).min(1, uz.admin.bundles.coursesHint),
-});
+  sale_price: salePrice,
+  sale_ends_at: saleEndsAt,
+}).refine(saleOk, { message: uz.admin.sale.invalid });
 
 export async function saveBundle(_prev: FormState, form: FormData): Promise<FormState> {
   const ctx = await adminContext();
@@ -372,6 +391,8 @@ export async function saveBundle(_prev: FormState, form: FormData): Promise<Form
     price: fd(form, "price") ?? "",
     allow_upgrade_pricing: form.get("allow_upgrade_pricing"),
     is_published: form.get("is_published"),
+    sale_price: fd(form, "sale_price") ?? "",
+    sale_ends_at: fd(form, "sale_ends_at") ?? "",
     course_ids: form.getAll("course_ids").filter((v): v is string => typeof v === "string"),
   });
   if (!parsed.success) return { status: "error", error: firstError(parsed.error) };

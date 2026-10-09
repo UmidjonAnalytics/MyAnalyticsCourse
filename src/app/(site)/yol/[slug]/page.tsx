@@ -8,6 +8,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getPath } from "@/lib/data/paths";
 import { formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
+import { Price } from "@/components/Price";
+import { currentPrice } from "@/lib/pricing";
 
 type Params = Promise<{ slug: string }>;
 const t = uz.paths;
@@ -222,8 +224,8 @@ export default async function PathPage({ params }: { params: Params }) {
               ) : null}
               {bundle && !ownsAll ? (
                 <div className="space-y-2 border-t border-border pt-4">
-                  <p className="font-display text-3xl font-bold">{formatSom(bundle.price)}</p>
-                  {separately > bundle.price ? (
+                  <Price value={currentPrice(bundle)} size="lg" showEnds />
+                  {separately > currentPrice(bundle).price ? (
                     <p className="text-sm text-muted">
                       {t.separately}: <s>{formatSom(separately)}</s>
                     </p>

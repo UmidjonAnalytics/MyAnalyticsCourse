@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Award, BookOpen, Briefcase, CheckCircle2, Clock, Flame, PlayCircle, Route, Trophy } from "lucide-react";
 import { CourseCover } from "@/components/CourseCover";
 import { Notice } from "@/components/Notice";
+import { InviteCard } from "@/components/referral/InviteCard";
 import { requireUser } from "@/lib/auth/session";
 import { getCourseOutline, getOwnedCourseIds } from "@/lib/data/catalog";
 import { getDashboard } from "@/lib/data/dashboard";
@@ -251,6 +252,7 @@ export default async function MyCoursesPage() {
           ))}
         </ul>
       )}
+      <InviteCard />
     </div>
   );
 }

@@ -34,6 +34,7 @@ export function CertificateActions({
       certUrl: url,
       certId: code,
     }).toString();
+  const linkedinPost = `https://www.linkedin.com/sharing/share-offsite/?${new URLSearchParams({ url }).toString()}`;
   const telegram = `https://t.me/share/url?${new URLSearchParams({ url, text: t.shareText(courseTitle) }).toString()}`;
 
   const copy = async () => {
@@ -57,6 +58,10 @@ export function CertificateActions({
           <a href={linkedin} target="_blank" rel="noopener noreferrer" className="btn-secondary">
             <LinkedInIcon />
             {t.linkedin}
+          </a>
+          <a href={linkedinPost} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+            <LinkedInIcon />
+            {t.linkedinPost}
           </a>
           <a href={telegram} target="_blank" rel="noopener noreferrer" className="btn-secondary">
             <Send className="size-4" aria-hidden="true" />

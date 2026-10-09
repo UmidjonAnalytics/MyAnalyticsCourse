@@ -1,11 +1,12 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { z } from "zod";
 import { serverEnv } from "@/lib/env";
 import { uz } from "@/lib/i18n/uz";
 import { getProvider, type ProviderName } from "@/lib/payments";
 import { quote, type Quote } from "@/lib/payments/orders";
+import { REFERRAL_COOKIE } from "@/lib/referral";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -32,7 +33,13 @@ export async function getQuote(
   const user = await currentUser();
   if (!user) return { ok: false, error: uz.errors.notLoggedIn };
   if (!(await rateLimit(`quote:${user.id}`, 30, 60))) return { ok: false, error: uz.checkout.errors.tooMany };
-  return quote(user.id, r.data, p.data);
+  const res = await quote(user.id, r.data, p.data, await referralCode());
+  return res.ok ? { ok: true, quote: res.quote } : res;
+}
+
+/** Invite code from the friend's link (cookie set by /taklif/[code]). */
+async function referralCode(): Promise<string | null> {
+  return (await cookies()).get(REFERRAL_COOKIE)?.value ?? null;
 }
 
 const startSchema = z.object({
@@ -58,7 +65,7 @@ export async function startCheckout(
   const provider = getProvider(providerName as ProviderName);
   if (!provider.isConfigured()) return { ok: false, error: uz.checkout.errors.provider };
 
-  const q = await quote(user.id, ref, promo);
+  const q = await quote(user.id, ref, promo, await referralCode());
   if (!q.ok) return q;
   const { quote: v } = q;
 
@@ -71,9 +78,10 @@ export async function startCheckout(
       course_id: v.productType === "course" ? v.productId : null,
       bundle_id: v.productType === "bundle" ? v.productId : null,
       amount: v.listPrice,
-      discount: v.upgradeDiscount + v.promoDiscount,
+      discount: v.saleDiscount + v.upgradeDiscount + v.promoDiscount + v.referralDiscount,
       final_amount: v.finalAmount,
       promo_code_id: v.promo?.id ?? null,
+      referrer_id: q.referrerId,
       provider: v.finalAmount === 0 ? "free" : providerName,
     })
     .select("id, number")

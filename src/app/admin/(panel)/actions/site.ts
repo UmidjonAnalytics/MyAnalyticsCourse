@@ -44,6 +44,24 @@ export async function saveSiteSettings(input: z.input<typeof settingsSchema>): P
   return { ok: true, message: uz.admin.settings.saved };
 }
 
+const referralSchema = z.object({
+  referral_enabled: z.boolean(),
+  referral_friend_percent: z.number().int().min(0).max(50),
+  referral_reward_percent: z.number().int().min(0).max(50),
+});
+
+export async function saveReferralSettings(input: z.input<typeof referralSchema>): Promise<ActionResult> {
+  const ctx = await adminContext();
+  if (!ctx) return forbidden;
+  const parsed = referralSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: uz.admin.referral.invalid };
+  const { error } = await ctx.supabase.from("site_settings").update(parsed.data).eq("id", 1);
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  await audit(ctx.supabase, ctx.userId, "update", "site_settings", null, parsed.data);
+  revalidatePath("/", "layout");
+  return { ok: true, message: uz.admin.settings.saved };
+}
+
 const pageSchema = z.object({
   slug: z.enum(["oferta", "maxfiylik", "qaytarish"]),
   title: z.string().trim().min(1).max(120),

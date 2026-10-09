@@ -77,6 +77,12 @@ export function CheckoutForm({
             <dt className="text-muted">{t.listPrice}</dt>
             <dd>{formatSom(q.listPrice)}</dd>
           </div>
+          {q.saleDiscount > 0 ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted">{t.saleDiscount}</dt>
+              <dd className="text-accent-text">−{formatSom(q.saleDiscount)}</dd>
+            </div>
+          ) : null}
           {q.upgradeDiscount > 0 ? (
             <div className="flex justify-between gap-4">
               <dt className="text-muted">{t.upgradeDiscount}</dt>
@@ -91,6 +97,12 @@ export function CheckoutForm({
               <dd className="text-accent-text">−{formatSom(q.promoDiscount)}</dd>
             </div>
           ) : null}
+          {q.referralDiscount > 0 ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted">{t.referralDiscount(q.referralPercent)}</dt>
+              <dd className="text-accent-text">−{formatSom(q.referralDiscount)}</dd>
+            </div>
+          ) : null}
           <div className="flex items-baseline justify-between gap-4 border-t border-border pt-3">
             <dt className="font-semibold">{t.total}</dt>
             <dd className="font-display text-2xl font-bold">{formatSom(q.finalAmount)}</dd>
@@ -98,6 +110,7 @@ export function CheckoutForm({
         </dl>
 
         <div className="mt-5 border-t border-border pt-4">
+          {q.referralDiscount > 0 ? <p className="mb-2 text-xs text-muted">{t.referralPromoNote}</p> : null}
           {q.promo ? (
             <p className="flex flex-wrap items-center gap-2 text-sm">
               <Tag className="size-4 text-accent-text" aria-hidden="true" />

@@ -8,13 +8,13 @@ import { createClient } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-export type CourseCard = Pick<Course, "id" | "title" | "slug" | "short_description" | "cover_url" | "price" | "category_id"> & {
+export type CourseCard = Pick<Course, "id" | "title" | "slug" | "short_description" | "cover_url" | "price" | "sale_price" | "sale_ends_at" | "category_id"> & {
   lessonCount: number;
   categoryName: string | null;
   owned: boolean;
 };
 
-export type BundleCard = Pick<Bundle, "id" | "title" | "slug" | "short_description" | "cover_url" | "price"> & {
+export type BundleCard = Pick<Bundle, "id" | "title" | "slug" | "short_description" | "cover_url" | "price" | "sale_price" | "sale_ends_at"> & {
   courseIds: string[];
 };
 
@@ -58,13 +58,13 @@ export async function listCatalog(supabase: Supabase, userId: string | null) {
     supabase.from("categories").select("*").order("position"),
     supabase
       .from("courses")
-      .select("id, title, slug, short_description, cover_url, price, category_id, lessons(count)")
+      .select("id, title, slug, short_description, cover_url, price, sale_price, sale_ends_at, category_id, lessons(count)")
       .eq("is_published", true)
       .is("archived_at", null)
       .order("position"),
     supabase
       .from("bundles")
-      .select("id, title, slug, short_description, cover_url, price, bundle_courses(course_id)")
+      .select("id, title, slug, short_description, cover_url, price, sale_price, sale_ends_at, bundle_courses(course_id)")
       .eq("is_published", true)
       .is("archived_at", null)
       .order("position"),
@@ -80,6 +80,8 @@ export async function listCatalog(supabase: Supabase, userId: string | null) {
     short_description: c.short_description,
     cover_url: c.cover_url,
     price: c.price,
+    sale_price: c.sale_price,
+    sale_ends_at: c.sale_ends_at,
     category_id: c.category_id,
     lessonCount: c.lessons[0]?.count ?? 0,
     categoryName: c.category_id ? (catName.get(c.category_id) ?? null) : null,
@@ -93,6 +95,8 @@ export async function listCatalog(supabase: Supabase, userId: string | null) {
     short_description: b.short_description,
     cover_url: b.cover_url,
     price: b.price,
+    sale_price: b.sale_price,
+    sale_ends_at: b.sale_ends_at,
     courseIds: b.bundle_courses.map((bc) => bc.course_id).filter((id) => visibleIds.has(id)),
   }));
   // Only show categories that have at least one course.
@@ -224,7 +228,7 @@ export const getCourseOutline = cache(loadOutline);
 export async function getBundlesForCourse(supabase: Supabase, courseId: string) {
   const { data } = await supabase
     .from("bundle_courses")
-    .select("bundles!inner(id, title, slug, price, short_description, is_published, archived_at)")
+    .select("bundles!inner(id, title, slug, price, sale_price, sale_ends_at, short_description, is_published, archived_at)")
     .eq("course_id", courseId);
   return (data ?? [])
     .map((r) => r.bundles)

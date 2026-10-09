@@ -46,6 +46,31 @@ export const uz = {
     skipToContent: "Asosiy mazmunga o'tish",
   },
 
+  sale: {
+    badge: (p: number) => `−${p}%`,
+    endsIn: (days: number, hours: number) =>
+      days > 0 ? `Aksiya ${days} kun ${hours} soatdan keyin tugaydi` : hours > 0 ? `Aksiya ${hours} soatdan keyin tugaydi` : "Aksiya bugun tugaydi",
+    was: "Oldingi narx",
+  },
+
+  referral: {
+    banner: (p: number) => `Sizni do'stingiz taklif qildi: birinchi xaridingizga ${p}% chegirma. Chegirma to'lov sahifasida avtomatik qo'llanadi.`,
+    title: "Do'stlarni taklif qiling",
+    lead: (friend: number, reward: number) =>
+      `Havolangiz orqali kelgan do'stingiz birinchi xaridiga ${friend}% chegirma oladi. U to'lov qilgach, siz ${reward}% chegirma kodi olasiz.`,
+    link: "Sizning havolangiz",
+    copy: "Nusxalash",
+    copied: "Nusxalandi",
+    telegram: "Telegram'da yuborish",
+    shareText: "Data Expert'da ma'lumotlar tahlilini o'rganyapman. Shu havola orqali birinchi xaridga chegirma olasiz:",
+    friends: (n: number) => (n === 0 ? "Hali xarid qilgan do'st yo'q" : `${n} ta do'stingiz xarid qildi`),
+    rewards: "Sizning chegirma kodlaringiz",
+    rewardLine: (p: number) => `${p}% chegirma`,
+    status: { active: "Faol", used: "Ishlatilgan", expired: "Muddati o'tgan", revoked: "Bekor qilingan" },
+    validTo: (d: string) => `${d} gacha`,
+    howToUse: "Kodni keyingi xaridingizda to'lov sahifasidagi promo kod maydoniga kiriting.",
+  },
+
   home: {
     title: "Ma'lumotlar tahlilini real biznes vazifalarida o'rganing",
     lead: "Excel, Power BI, SQL va Python bo'yicha bosqichma-bosqich kurslar. Har bir darsda video, biznes vazifa va amaliy mashq.",
@@ -116,6 +141,9 @@ export const uz = {
     listPrice: "Narxi",
     upgradeDiscount: "Sizdagi kurslar uchun chegirma",
     promoDiscount: "Promo kod chegirmasi",
+    saleDiscount: "Aksiya chegirmasi",
+    referralDiscount: (p: number) => `Do'st taklifi chegirmasi (${p}%)`,
+    referralPromoNote: "Promo kod kiritilsa, do'st taklifi chegirmasi o'rniga promo kod ishlaydi.",
     total: "To'lov summasi",
     back: "Orqaga",
     promo: "Promo kod",
@@ -600,6 +628,7 @@ export const uz = {
     print: "PDF sifatida saqlash / chop etish",
     printHint: "Chop etish oynasida \"PDF sifatida saqlash\" ni tanlang (A4, albom).",
     linkedin: "LinkedIn'ga qo'shish",
+    linkedinPost: "LinkedIn'da e'lon qilish",
     telegram: "Telegram'da ulashish",
     copy: "Havolani nusxalash",
     copied: "Nusxalandi",
@@ -1277,6 +1306,22 @@ export const uz = {
       delete: "O'chirish",
       deleteConfirm: "Challenge va barcha ishlar o'chirilsinmi?",
       status: { active: "Davom etmoqda", upcoming: "Boshlanmagan", ended: "Tugagan" } as Record<string, string>,
+    },
+    referral: {
+      title: "Do'st taklifi",
+      lead: "Har bir talabaning shaxsiy taklif havolasi bor. Do'sti birinchi xaridiga chegirma oladi, to'lov tasdiqlangach taklif qilgan talabaga bir martalik chegirma kodi (180 kun amal qiladi) beriladi.",
+      enabled: "Do'st taklifi yoqilgan",
+      friendPercent: "Do'stga chegirma (birinchi xarid)",
+      rewardPercent: "Taklif qilganga chegirma kodi",
+      hint: "0–50%. Bepul (100% chegirmali) buyurtmalar uchun mukofot berilmaydi. Pul qaytarilsa, ishlatilmagan mukofot kodi bekor bo'ladi.",
+      invalid: "Foiz 0 dan 50 gacha bo'lsin.",
+    },
+    sale: {
+      price: "Aksiya narxi (so'm)",
+      priceHint: "Bo'sh qoldirsangiz, aksiya yo'q. Oddiy narxdan kam bo'lsin.",
+      ends: "Aksiya tugash vaqti (Toshkent)",
+      endsHint: "Bo'sh qoldirsangiz, aksiya o'chirmaguncha davom etadi.",
+      invalid: "Aksiya narxi oddiy narxdan kam bo'lsin.",
     },
     settings: {
       title: "Sayt sozlamalari",

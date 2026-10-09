@@ -26,13 +26,15 @@ import { Avatar } from "@/components/Avatar";
 import { CertificateButton } from "@/components/course/CertificateButton";
 import { ReviewForm } from "@/components/course/ReviewForm";
 import { CourseCover } from "@/components/CourseCover";
+import { Price } from "@/components/Price";
 import { Markdown } from "@/components/Markdown";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ProjectCardView } from "@/components/catalog/Cards";
 import { getBundlesForCourse, getCourseOutline, type OutlineLesson } from "@/lib/data/catalog";
 import { listProjects } from "@/lib/data/paths";
-import { formatDate, formatSom } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
+import { currentPrice } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = Promise<{ slug: string }>;
@@ -93,6 +95,7 @@ export default async function CoursePage({ params }: { params: Params }) {
   const reviewList = reviews ?? [];
   const avg = reviewList.length ? reviewList.reduce((a, r) => a + r.rating, 0) / reviewList.length : 0;
   const hasAccessNow = owned || hasAccess;
+  const price = currentPrice(course);
   const firstFree = outline.lessons.find((l) => l.is_free_preview);
   const freeCount = outline.lessons.filter((l) => l.is_free_preview).length;
 
@@ -115,7 +118,7 @@ export default async function CoursePage({ params }: { params: Params }) {
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 py-3 shadow-[0_-4px_16px_rgb(0_0_0/0.06)] lg:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-display text-lg font-bold leading-tight">{formatSom(course.price)}</p>
+              <Price value={price} />
               {freeCount > 0 ? <p className="text-xs text-muted">{p.freeLessons(freeCount)}</p> : null}
             </div>
             <Link href={`/tolov/kurs/${course.slug}`} className="btn-primary shrink-0">
@@ -421,7 +424,7 @@ export default async function CoursePage({ params }: { params: Params }) {
                 </>
               ) : (
                 <>
-                  <p className="font-display text-3xl font-bold">{formatSom(course.price)}</p>
+                  <Price value={price} size="lg" showEnds />
                   <p className="text-sm text-muted">{uz.course.oneTime}</p>
                   <Link href={`/tolov/kurs/${course.slug}`} className="btn-primary w-full">
                     {uz.course.buy}
@@ -461,7 +464,9 @@ export default async function CoursePage({ params }: { params: Params }) {
                       className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 hover:bg-surface-muted"
                     >
                       <span className="font-semibold">{b.title}</span>
-                      <span className="shrink-0 text-sm font-bold">{formatSom(b.price)}</span>
+                      <span className="shrink-0 text-right text-sm">
+                        <Price value={currentPrice(b)} size="sm" />
+                      </span>
                     </Link>
                   </li>
                 ))}

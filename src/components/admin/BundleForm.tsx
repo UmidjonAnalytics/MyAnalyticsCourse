@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { saveBundle } from "@/app/admin/(panel)/actions/content";
-import { Checkbox, CoverField, FormMessage, MarkdownField, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
+import { Checkbox, CoverField, FormMessage, MarkdownField, SaleFields, SubmitButton, TextField, TitleSlugFields, submitWith } from "@/components/admin/fields";
 import type { FormState } from "@/lib/admin/context";
 import type { Bundle } from "@/lib/database.types";
 import { formatSom } from "@/lib/format";
@@ -56,6 +56,7 @@ export function BundleForm({
       </fieldset>
 
       <TextField name="price" label={t.common.price} defaultValue={String(bundle?.price ?? 0)} inputMode="numeric" required />
+      <SaleFields price={bundle?.sale_price} endsAt={bundle?.sale_ends_at} />
       <Checkbox name="allow_upgrade_pricing" label={t.bundles.upgrade} defaultChecked={bundle?.allow_upgrade_pricing ?? false} />
       <TextField name="short_description" label={t.common.shortDescription} defaultValue={bundle?.short_description} maxLength={300} />
       <MarkdownField name="description" label={t.common.description} defaultValue={bundle?.description} rows={6} />

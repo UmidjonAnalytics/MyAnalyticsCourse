@@ -45,6 +45,7 @@ export type Profile = {
   github_url: string | null;
   website_url: string | null;
   is_public: boolean;
+  referral_code: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
   last_seen_at: Timestamp | null;
@@ -104,6 +105,8 @@ export type Course = {
   cover_url: string | null;
   price: number;
   monthly_price: number | null;
+  sale_price: number | null;
+  sale_ends_at: Timestamp | null;
   is_published: boolean;
   position: number;
   instructor_id: string | null;
@@ -250,6 +253,9 @@ export type SiteSettings = {
   telegram_url: string;
   instagram_url: string;
   support_hours: string;
+  referral_enabled: boolean;
+  referral_friend_percent: number;
+  referral_reward_percent: number;
   updated_at: Timestamp;
 };
 
@@ -352,6 +358,8 @@ export type Bundle = {
   cover_url: string | null;
   price: number;
   monthly_price: number | null;
+  sale_price: number | null;
+  sale_ends_at: Timestamp | null;
   allow_upgrade_pricing: boolean;
   is_published: boolean;
   position: number;
@@ -377,8 +385,19 @@ export type PromoCode = {
   used_count: number;
   applies_to: Json;
   is_active: boolean;
+  owner_id: string | null; // referral reward: only this student may use it
   created_at: Timestamp;
   archived_at: Timestamp | null;
+};
+
+export type ReferralReward = {
+  id: string;
+  order_id: string;
+  referrer_id: string;
+  referred_id: string;
+  promo_code_id: string | null;
+  created_at: Timestamp;
+  revoked_at: Timestamp | null;
 };
 
 export type Order = {
@@ -394,6 +413,7 @@ export type Order = {
   discount: number;
   final_amount: number;
   promo_code_id: string | null;
+  referrer_id: string | null;
   status: OrderStatus;
   provider: OrderProvider | null;
   number: number;
@@ -663,6 +683,7 @@ export type Database = {
         [Rel<"bundle_courses_bundle_id_fkey", "bundle_id", "bundles">, Rel<"bundle_courses_course_id_fkey", "course_id", "courses">]
       >;
       promo_codes: Table<PromoCode, "code" | "discount_type" | "discount_value">;
+      referral_rewards: Table<ReferralReward, "order_id" | "referrer_id" | "referred_id">;
       orders: Table<
         Order,
         "user_id" | "product_type" | "amount" | "final_amount",
@@ -857,6 +878,11 @@ export type Database = {
       admin_reorder: { Args: { p_table: "categories" | "courses" | "modules" | "lessons" | "bundles"; p_ids: string[] }; Returns: undefined };
       admin_set_role: { Args: { p_user_id: string; p_role: Role }; Returns: undefined };
       admin_purge: { Args: { p_entity: "course" | "module" | "lesson" | "bundle"; p_id: string }; Returns: undefined };
+      my_referral_code: { Args: Record<string, never>; Returns: string };
+      my_referral_rewards: {
+        Args: Record<string, never>;
+        Returns: Array<{ created_at: Timestamp; code: string | null; percent: number | null; used: boolean | null; valid_to: Timestamp | null; revoked: boolean }>;
+      };
       admin_import_outline: { Args: { p_course_id: string; p_modules: Json; p_free_count: number }; Returns: { modules: number; lessons: number } };
       admin_update_lessons: { Args: { p_course_id: string; p_rows: Json }; Returns: number };
       admin_students: {

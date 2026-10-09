@@ -34,3 +34,20 @@ export function bundlePrice({ bundlePrice, allowUpgradePricing, courses }: Bundl
     isUpgrade,
   };
 }
+
+// Sale price ("aksiya"): used instead of the list price until sale_ends_at (or until removed).
+
+export type SaleFields = { price: number; sale_price: number | null; sale_ends_at: string | null };
+export type CurrentPrice = { price: number; was: number | null; percent: number; endsAt: string | null };
+
+export function currentPrice(p: SaleFields, now = Date.now()): CurrentPrice {
+  const active = p.sale_price !== null && p.sale_price < p.price && (!p.sale_ends_at || new Date(p.sale_ends_at).getTime() > now);
+  if (!active) return { price: p.price, was: null, percent: 0, endsAt: null };
+  return { price: p.sale_price!, was: p.price, percent: Math.round(((p.price - p.sale_price!) / p.price) * 100), endsAt: p.sale_ends_at };
+}
+
+/** Whole days and hours left until `endsAt`. */
+export function timeLeft(endsAt: string, now = Date.now()): { days: number; hours: number } {
+  const ms = Math.max(new Date(endsAt).getTime() - now, 0);
+  return { days: Math.floor(ms / 86_400_000), hours: Math.floor((ms % 86_400_000) / 3_600_000) };
+}

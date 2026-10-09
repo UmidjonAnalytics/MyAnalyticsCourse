@@ -93,7 +93,7 @@ async function loadPath(slug: string, userId: string | null) {
   const supabase = await createClient();
   const { data: path } = await supabase
     .from("learning_paths")
-    .select("*, learning_path_courses(course_id, position, courses(slug)), bundles(id, title, slug, price, is_published, archived_at)")
+    .select("*, learning_path_courses(course_id, position, courses(slug)), bundles(id, title, slug, price, sale_price, sale_ends_at, is_published, archived_at)")
     .eq("slug", slug)
     .eq("is_published", true)
     .is("archived_at", null)

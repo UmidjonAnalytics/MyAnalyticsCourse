@@ -326,3 +326,28 @@ export function YouTubeField({ defaultValue = "" }: { defaultValue?: string | nu
     </div>
   );
 }
+
+/** "2026-11-01T09:00" in Tashkent time (UTC+5) for <input type="datetime-local">. */
+function toTashkentInput(iso: string | null | undefined): string {
+  return iso ? new Date(new Date(iso).getTime() + 5 * 3_600_000).toISOString().slice(0, 16) : "";
+}
+
+/** Sale price ("aksiya") and its end time, for courses and bundles. */
+export function SaleFields({ price, endsAt }: { price?: number | null; endsAt?: string | null }) {
+  const id = useId();
+  const s = uz.admin.sale;
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <TextField name="sale_price" label={s.price} defaultValue={price != null ? String(price) : ""} inputMode="numeric" hint={s.priceHint} />
+      <div>
+        <label htmlFor={id} className="label">
+          {s.ends}
+        </label>
+        <input id={id} name="sale_ends_at" type="datetime-local" className="input" defaultValue={toTashkentInput(endsAt)} aria-describedby={`${id}-h`} />
+        <p id={`${id}-h`} className="mt-1 text-xs text-muted">
+          {s.endsHint}
+        </p>
+      </div>
+    </div>
+  );
+}

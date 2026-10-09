@@ -5,11 +5,12 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { CourseCover } from "@/components/CourseCover";
 import { Markdown } from "@/components/Markdown";
 import { Notice } from "@/components/Notice";
+import { Price } from "@/components/Price";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getOwnedCourseIds } from "@/lib/data/catalog";
 import { formatSom } from "@/lib/format";
 import { uz } from "@/lib/i18n/uz";
-import { bundlePrice } from "@/lib/pricing";
+import { bundlePrice, currentPrice } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = Promise<{ slug: string }>;
@@ -43,8 +44,9 @@ export default async function BundlePage({ params }: { params: Params }) {
     .sort((a, b) => a.position - b.position)
     .map((bc) => ({ ...bc.courses, owned: owned.has(bc.courses.id) }));
 
+  const sale = currentPrice(bundle);
   const price = bundlePrice({
-    bundlePrice: bundle.price,
+    bundlePrice: sale.price,
     allowUpgradePricing: bundle.allow_upgrade_pricing,
     courses: courses.map((c) => ({ price: c.price, owned: c.owned })),
   });
@@ -102,7 +104,9 @@ export default async function BundlePage({ params }: { params: Params }) {
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="font-semibold">{uz.bundle.bundlePrice}</dt>
-                <dd className={price.isUpgrade ? "line-through" : "font-display text-2xl font-bold"}>{formatSom(bundle.price)}</dd>
+                <dd className={price.isUpgrade ? "line-through" : "text-right"}>
+                  {price.isUpgrade ? formatSom(sale.price) : <Price value={sale} showEnds />}
+                </dd>
               </div>
               {price.isUpgrade ? (
                 <div className="flex justify-between gap-3">

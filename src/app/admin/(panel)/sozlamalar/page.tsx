@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SitePageForm, SiteSettingsForm } from "@/components/admin/SiteSettingsForm";
+import { ReferralSettingsForm, SitePageForm, SiteSettingsForm } from "@/components/admin/SiteSettingsForm";
 import { publicSiteUrl } from "@/lib/admin/links";
 import { uz } from "@/lib/i18n/uz";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +32,13 @@ export default async function SiteSettingsPage() {
         <p className="mt-1 text-muted">{t.lead}</p>
       </div>
       <SiteSettingsForm settings={editable} />
+      <ReferralSettingsForm
+        settings={{
+          referral_enabled: settings?.referral_enabled ?? false,
+          referral_friend_percent: settings?.referral_friend_percent ?? 0,
+          referral_reward_percent: settings?.referral_reward_percent ?? 0,
+        }}
+      />
       <section aria-labelledby="legal-pages" className="space-y-4">
         <div>
           <h2 id="legal-pages" className="text-xl font-bold">

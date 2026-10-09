@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
@@ -9,6 +10,7 @@ import { uz } from "@/lib/i18n/uz";
 import { checkoutProviders } from "@/lib/payments";
 import { quote } from "@/lib/payments/orders";
 import { paymeCardFormEnabled } from "@/lib/payments/payme";
+import { REFERRAL_COOKIE } from "@/lib/referral";
 
 export const metadata: Metadata = { title: uz.checkout.title };
 
@@ -18,7 +20,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ type:
   const user = await requireUser(`/tolov/${type}/${slug}`);
   const ref = { type, slug } as const;
   const backHref = type === "kurs" ? `/kurs/${slug}` : `/toplam/${slug}`;
-  const q = await quote(user.id, ref, null);
+  const q = await quote(user.id, ref, null, (await cookies()).get(REFERRAL_COOKIE)?.value ?? null);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8 sm:py-10">

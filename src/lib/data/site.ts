@@ -17,6 +17,9 @@ const EMPTY: SiteSettings = {
   telegram_url: "",
   instagram_url: "",
   support_hours: "",
+  referral_enabled: false,
+  referral_friend_percent: 0,
+  referral_reward_percent: 0,
   updated_at: new Date(0).toISOString(),
 };
 
